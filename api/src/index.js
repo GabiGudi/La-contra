@@ -1,5 +1,6 @@
 import express from "express";
 import { pool } from "./db.js";
+import { rutasTurnos } from "./rutas/turnos.js";
 
 const app = express();
 app.use(express.json());
@@ -15,6 +16,16 @@ app.get("/api/complejo", async (req, res) => {
     [complejos[0].id]
   );
   res.json({ ...complejos[0], canchas });
+});
+
+app.use("/api/turnos", rutasTurnos);
+
+app.use((err, req, res, next) => {
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "El cuerpo del pedido no es JSON válido." });
+  }
+  console.error(err);
+  res.status(500).json({ error: "Error interno del servidor." });
 });
 
 app.listen(3000, () => {
