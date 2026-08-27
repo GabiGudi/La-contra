@@ -309,3 +309,50 @@ rutasTurnos.delete("/codigo/:codigo", async (req, res) => {
     cliente.release();
   }
 });
+
+/** Listado para el admin: incluye los códigos y permite filtrar. */
+rutasTurnos.get("/admin", async (req, res) => {
+  const { estado, desde } = req.query;
+
+  const { rows: turnos } = await pool.query(
+    `SELECT t.id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora, t.estado,
+            t.codigo, t.codigo_visitante, c.nombre AS cancha, c.tipo
+       FROM turnos t JOIN canchas c ON c.id = t.cancha_id
+      WHERE ($1::text IS NULL OR t.estado = $1)
+        AND ($2::date IS NULL OR t.fecha >= $2)
+      ORDER BY t.fecha, t.hora`,
+    [estado || null, desde || null]
+  );
+
+  if (turnos.length === 0) return res.json([]);
+
+  const { rows: equipos } = await pool.query("SELECT * FROM equipos WHERE turno_id = ANY($1)", [
+    turnos.map((t) => t.id),
+  ]);
+  const { rows: jugadores } = await pool.query(
+    "SELECT * FROM jugadores WHERE equipo_id = ANY($1) ORDER BY id",
+    [equipos.map((e) => e.id)]
+  );
+
+  const armar = (equipo) =>
+    equipo && {
+      nombre: equipo.nombre,
+      contacto: equipo.contacto,
+      jugadores: jugadores.filter((j) => j.equipo_id === equipo.id).map((j) => j.nombre),
+    };
+
+  res.json(
+    turnos.map((t) => ({
+      ...t,
+      local: armar(equipos.find((e) => e.turno_id === t.id && e.rol === "local")),
+      visitante: armar(equipos.find((e) => e.turno_id === t.id && e.rol === "visitante")) || null,
+    }))
+  );
+});
+
+/** El admin borra cualquier turno, sin límite de horario. */
+rutasTurnos.delete("/:id", async (req, res) => {
+  const { rowCount } = await pool.query("DELETE FROM turnos WHERE id = $1", [req.params.id]);
+  if (rowCount === 0) return res.status(404).json({ error: "Ese turno no existe." });
+  res.json({ eliminado: true });
+});

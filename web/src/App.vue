@@ -8,7 +8,8 @@ import { ref } from "vue";
     <nav>
       <RouterLink to="/">Reservar</RouterLink> |
       <RouterLink to="/mi-turno">Mi turno</RouterLink> |
-      <RouterLink to="/admin">Admin</RouterLink>
+      <RouterLink to="/admin">Admin</RouterLink> |
+      <RouterLink to="/admin/turnos">Admin turnos</RouterLink>
     </nav>
   </header>
   <main>
