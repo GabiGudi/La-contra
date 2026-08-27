@@ -123,7 +123,7 @@ rutasTurnos.get("/", async (req, res) => {
 
   const { rows: turnos } = await pool.query(
     `SELECT t.id, t.cancha_id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha,
-            t.hora, t.estado, t.codigo
+            t.hora, t.estado
        FROM turnos t
       WHERE ($1::date IS NULL OR t.fecha >= $1)
         AND ($2::date IS NULL OR t.fecha <= $2)
@@ -219,6 +219,92 @@ rutasTurnos.post("/:id/contra", async (req, res) => {
     await cliente.query("ROLLBACK");
     console.error(e);
     res.status(500).json({ error: "No se pudo anotar el equipo." });
+  } finally {
+    cliente.release();
+  }
+});
+
+/** Buscar el turno propio con el código de 4 dígitos. */
+rutasTurnos.get("/codigo/:codigo", async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT t.id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora, t.estado,
+            c.nombre AS cancha, c.tipo,
+            (t.codigo = $1) AS es_local
+       FROM turnos t JOIN canchas c ON c.id = t.cancha_id
+      WHERE t.codigo = $1 OR t.codigo_visitante = $1`,
+    [req.params.codigo]
+  );
+
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "No encontramos ningún turno con ese código." });
+  }
+
+  const turno = rows[0];
+  const { rows: equipos } = await pool.query("SELECT * FROM equipos WHERE turno_id = $1", [turno.id]);
+  const { rows: jugadores } = await pool.query(
+    "SELECT * FROM jugadores WHERE equipo_id = ANY($1) ORDER BY id",
+    [equipos.map((e) => e.id)]
+  );
+
+  const armar = (equipo) =>
+    equipo && {
+      nombre: equipo.nombre,
+      contacto: equipo.contacto,
+      jugadores: jugadores.filter((j) => j.equipo_id === equipo.id).map((j) => j.nombre),
+    };
+
+  res.json({
+    ...turno,
+    local: armar(equipos.find((e) => e.rol === "local")),
+    visitante: armar(equipos.find((e) => e.rol === "visitante")) || null,
+  });
+});
+
+/** Cancelar el turno propio, hasta 15 minutos antes. */
+rutasTurnos.delete("/codigo/:codigo", async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT t.id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora,
+            (t.codigo = $1) AS es_local
+       FROM turnos t
+      WHERE t.codigo = $1 OR t.codigo_visitante = $1`,
+    [req.params.codigo]
+  );
+
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "No encontramos ningún turno con ese código." });
+  }
+
+  const turno = rows[0];
+  const inicio = new Date(`${turno.fecha}T${String(turno.hora).padStart(2, "0")}:00:00`);
+  const minutosQueFaltan = Math.floor((inicio.getTime() - Date.now()) / 60000);
+
+  if (minutosQueFaltan < 15) {
+    return res.status(409).json({
+      error: "Los turnos se pueden cancelar hasta 15 minutos antes de la hora de juego.",
+    });
+  }
+
+  if (turno.es_local) {
+    // Se va el que reservó: cae el turno entero y la cancha queda libre.
+    await pool.query("DELETE FROM turnos WHERE id = $1", [turno.id]);
+    return res.json({ cancelado: "turno" });
+  }
+
+  // Se baja la contra: el turno sigue en pie y vuelve a buscar rival.
+  const cliente = await pool.connect();
+  try {
+    await cliente.query("BEGIN");
+    await cliente.query("DELETE FROM equipos WHERE turno_id = $1 AND rol = 'visitante'", [turno.id]);
+    await cliente.query(
+      "UPDATE turnos SET estado = 'esperando', codigo_visitante = NULL WHERE id = $1",
+      [turno.id]
+    );
+    await cliente.query("COMMIT");
+    res.json({ cancelado: "contra" });
+  } catch (e) {
+    await cliente.query("ROLLBACK");
+    console.error(e);
+    res.status(500).json({ error: "No se pudo cancelar." });
   } finally {
     cliente.release();
   }

@@ -7,6 +7,7 @@ import { ref } from "vue";
     <h1>La Contra</h1>
     <nav>
       <RouterLink to="/">Reservar</RouterLink> |
+      <RouterLink to="/mi-turno">Mi turno</RouterLink> |
       <RouterLink to="/admin">Admin</RouterLink>
     </nav>
   </header>
