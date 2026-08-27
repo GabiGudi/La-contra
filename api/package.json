@@ -7,8 +7,9 @@
     "vitest": "^4.1.11"
   },
   "type": "module",
-  "scripts": {
-    "dev": "node --watch src/index.js",
+    "scripts": {
+    "dev": "node --watch --env-file=.env src/index.js",
+    "migrar": "node --env-file=.env src/migrar.js",
     "test": "vitest run"
   }
 }
