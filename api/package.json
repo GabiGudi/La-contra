@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "test": "vitest run"
+  }
+}
