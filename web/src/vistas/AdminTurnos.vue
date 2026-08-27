@@ -44,9 +44,9 @@ onMounted(cargar);
 <template>
   <h2>Turnos</h2>
 
-  <p v-if="error" style="color: #c00">{{ error }}</p>
+  <p v-if="error" class="error">{{ error }}</p>
 
-  <div>
+  <div class="filtros">
     <button @click="cambiarFiltro('todos')" :disabled="filtro === 'todos'">Todos</button>
     <button @click="cambiarFiltro('esperando')" :disabled="filtro === 'esperando'">Esperando contra</button>
     <button @click="cambiarFiltro('confirmado')" :disabled="filtro === 'confirmado'">Con contra</button>
@@ -58,37 +58,39 @@ onMounted(cargar);
 
   <p>{{ turnos.length }} turno(s).</p>
 
-  <table border="1" cellpadding="6">
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Hora</th>
-        <th>Cancha</th>
-        <th>Local</th>
-        <th>Visitante</th>
-        <th>Estado</th>
-        <th>Contacto</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="t in turnos" :key="t.id">
-        <td>{{ t.fecha }}</td>
-        <td>{{ t.hora }}:00</td>
-        <td>{{ t.cancha }} (F{{ t.tipo }})</td>
-        <td>{{ t.local.nombre }} ({{ t.local.jugadores.length }}/{{ t.tipo }})</td>
-        <td>
-          <template v-if="t.visitante">
-            {{ t.visitante.nombre }} ({{ t.visitante.jugadores.length }}/{{ t.tipo }})
-          </template>
-          <em v-else>busca contra</em>
-        </td>
-        <td>{{ t.estado }}</td>
-        <td>{{ t.local.contacto }}</td>
-        <td><button @click="eliminar(t)">Eliminar</button></td>
-      </tr>
-    </tbody>
-  </table>
+    <div class="tabla">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Cancha</th>
+            <th>Local</th>
+            <th>Visitante</th>
+            <th>Estado</th>
+            <th>Contacto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="t in turnos" :key="t.id">
+            <td>{{ t.fecha }}</td>
+            <td>{{ t.hora }}:00</td>
+            <td>{{ t.cancha }} (F{{ t.tipo }})</td>
+            <td>{{ t.local.nombre }} ({{ t.local.jugadores.length }}/{{ t.tipo }})</td>
+            <td>
+              <template v-if="t.visitante">
+                {{ t.visitante.nombre }} ({{ t.visitante.jugadores.length }}/{{ t.tipo }})
+              </template>
+              <em v-else>busca contra</em>
+            </td>
+            <td>{{ t.estado }}</td>
+            <td>{{ t.local.contacto }}</td>
+            <td><button class="peligro" @click="eliminar(t)">Eliminar</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
   <p v-if="!turnos.length">No hay turnos con ese filtro.</p>
 </template>

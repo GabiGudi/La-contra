@@ -46,8 +46,8 @@ async function cancelar() {
   <input v-model="codigo" @keydown.enter="buscar" placeholder="1234" maxlength="4" />
   <button @click="buscar">Buscar</button>
 
-  <p v-if="error" style="color: #c00">{{ error }}</p>
-  <p v-if="aviso" style="color: #080">{{ aviso }}</p>
+  <p v-if="error" class="error">{{ error }}</p>
+  <p v-if="aviso" class="aviso">{{ aviso }}</p>
 
   <div v-if="turno">
     <h3>{{ turno.fecha }} a las {{ turno.hora }}:00</h3>
@@ -69,7 +69,7 @@ async function cancelar() {
     </div>
     <p v-else><em>Todavía sin contra.</em></p>
 
-    <button @click="cancelar">
+    <button class="peligro" @click="cancelar">
       {{ turno.es_local ? "Cancelar turno" : "Bajarme del partido" }}
     </button>
   </div>

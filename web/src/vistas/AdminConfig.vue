@@ -66,8 +66,8 @@ onMounted(cargar);
   <div v-if="complejo">
     <h2>Configuración del complejo</h2>
 
-    <p v-if="error" style="color: #c00">{{ error }}</p>
-    <p v-if="aviso" style="color: #080">{{ aviso }}</p>
+    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="aviso" class="aviso">{{ aviso }}</p>
 
     <label>
       Nombre
@@ -94,7 +94,7 @@ onMounted(cargar);
     <ul>
       <li v-for="c in complejo.canchas" :key="c.id">
         {{ c.nombre }} — fútbol {{ c.tipo }}
-        <button @click="eliminarCancha(c.id)">Eliminar</button>
+        <button class="peligro" @click="eliminarCancha(c.id)">Eliminar</button>
       </li>
     </ul>
     <p v-if="!complejo.canchas.length">Todavía no cargaste ninguna cancha.</p>

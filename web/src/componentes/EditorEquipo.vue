@@ -45,7 +45,7 @@ function quitarJugador(indice) {
     <p>Jugadores ({{ modelValue.jugadores.length }}/{{ cupo }})</p>
     <ol>
       <li v-for="(j, i) in modelValue.jugadores" :key="i">
-        {{ j }} <button type="button" @click="quitarJugador(i)">quitar</button>
+        {{ j }} <button type="button" class="chico" @click="quitarJugador(i)">quitar</button>
       </li>
     </ol>
 

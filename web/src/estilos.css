@@ -1,0 +1,465 @@
+/* ══════════════════════════════════════════════════════════
+   LA CONTRA · hoja de estilos
+   Dirección "Pechera": planilla clara, legible al sol, con el
+   naranja de las pecheras de entrenamiento como único acento
+   fuerte. Pensada para el celular primero.
+   ══════════════════════════════════════════════════════════ */
+ 
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&display=swap');
+ 
+:root {
+  --papel: #F7F6F2;
+  --blanco: #FFFFFF;
+  --tinta: #14161A;
+  --gris: #6E7278;
+  --linea: #DDDAD2;
+  --pechera: #FF5B1F;
+  --verde: #1F8A54;
+  --roja: #C2321B;
+ 
+  --radio: 10px;
+  --sombra: 0 1px 2px rgba(20, 22, 26, .06);
+}
+ 
+* { box-sizing: border-box; }
+ 
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: Archivo, system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+ 
+/* ── Tipografía ────────────────────────────────────────── */
+ 
+h1, h2, h3, h4 {
+  font-family: "Archivo Black", Archivo, sans-serif;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+ 
+h1 { font-size: 26px; }
+h2 { font-size: 24px; margin-top: 4px; }
+h3 { font-size: 19px; margin-top: 28px; }
+h4 { font-size: 15px; margin-bottom: 6px; }
+ 
+p { margin: 0 0 12px; }
+ 
+em { color: var(--gris); font-style: normal; }
+ 
+/* ── Encabezado y navegación ───────────────────────────── */
+ 
+header {
+  background: var(--blanco);
+  border-bottom: 2px solid var(--linea);
+  padding: 14px 18px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+ 
+header h1 { margin: 0 0 10px; }
+ 
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 0;               /* se come los "|" sueltos del template */
+}
+ 
+nav a {
+  font-family: Archivo, sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--gris);
+  padding: 7px 14px;
+  border: 1.5px solid var(--linea);
+  border-radius: 999px;
+  transition: border-color .15s, color .15s;
+}
+ 
+nav a:hover { color: var(--tinta); border-color: var(--tinta); }
+ 
+nav a.router-link-active {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--papel);
+}
+ 
+nav button {
+  font-size: 13px;
+  padding: 7px 14px;
+  background: none;
+  border: 1.5px solid var(--linea);
+  color: var(--gris);
+}
+ 
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 22px 18px 60px;
+}
+ 
+/* ── Formularios ───────────────────────────────────────── */
+ 
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gris);
+  margin-bottom: 12px;
+}
+ 
+input, select {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  margin-top: 5px;
+  padding: 11px 12px;
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  color: var(--tinta);
+  background: var(--blanco);
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio);
+}
+ 
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--pechera);
+  box-shadow: 0 0 0 3px rgba(255, 91, 31, .18);
+}
+ 
+input:disabled {
+  background: var(--papel);
+  color: var(--gris);
+  cursor: not-allowed;
+}
+ 
+/* Los radios y checkboxes van en línea con su texto */
+label:has(input[type="radio"]),
+label:has(input[type="checkbox"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-right: 16px;
+  font-size: 14.5px;
+  color: var(--tinta);
+}
+ 
+input[type="radio"], input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--pechera);
+}
+ 
+/* ── Botones ───────────────────────────────────────────── */
+ 
+button {
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: var(--blanco);
+  background: var(--pechera);
+  border: 1.5px solid var(--pechera);
+  border-radius: var(--radio);
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: filter .15s;
+}
+ 
+button:hover { filter: brightness(1.07); }
+button:active { filter: brightness(.94); }
+ 
+button:disabled {
+  background: var(--linea);
+  border-color: var(--linea);
+  color: var(--gris);
+  cursor: default;
+  filter: none;
+}
+ 
+/* Secundario: el que no es la acción principal de la pantalla */
+button.hueco {
+  background: none;
+  color: var(--tinta);
+  border-color: var(--tinta);
+}
+ 
+/* Destructivo: cancelar, eliminar, dar de baja */
+button.peligro {
+  background: none;
+  color: var(--roja);
+  border-color: var(--roja);
+}
+ 
+/* Chico: quitar un jugador, acciones dentro de una fila */
+button.chico {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  background: none;
+  color: var(--gris);
+  border-color: var(--linea);
+}
+ 
+button.chico:hover { color: var(--roja); border-color: var(--roja); }
+ 
+/* ── Tablas ────────────────────────────────────────────── */
+ 
+.tabla {
+  overflow-x: auto;
+  margin: 0 0 20px;
+  -webkit-overflow-scrolling: touch;
+}
+ 
+table {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+  background: var(--blanco);
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+ 
+th {
+  text-align: left;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--gris);
+  background: var(--papel);
+  padding: 10px 12px;
+  border-bottom: 1.5px solid var(--linea);
+  white-space: nowrap;
+}
+ 
+td {
+  padding: 12px;
+  border-top: 1.5px solid var(--linea);
+  font-size: 14.5px;
+  vertical-align: middle;
+}
+ 
+tbody tr:first-child td { border-top: 0; }
+ 
+/* La primera columna de las dos grillas es la hora */
+td:first-child {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+}
+ 
+/* Los botones dentro de una tabla no se comen la fila */
+td button { padding: 8px 12px; font-size: 13px; }
+ 
+/* ── Estados del turno ─────────────────────────────────── */
+ 
+.busca, .armado {
+  display: inline-block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+ 
+.busca {
+  color: var(--pechera);
+  background: rgba(255, 91, 31, .12);
+}
+ 
+.armado {
+  color: var(--verde);
+  background: rgba(31, 138, 84, .12);
+}
+ 
+/* ── Equipos y jugadores ───────────────────────────────── */
+ 
+fieldset {
+  background: var(--blanco);
+  border: 1.5px solid var(--linea);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: var(--sombra);
+}
+ 
+legend {
+  font-family: "Archivo Black", sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 3px 10px;
+  background: var(--tinta);
+  color: var(--papel);
+  border-radius: 6px;
+}
+ 
+/* La lista de jugadores se lee como una formación: dorsal y nombre */
+ol {
+  list-style: none;
+  counter-reset: dorsal;
+  padding: 0;
+  margin: 10px 0;
+}
+ 
+ol li {
+  counter-increment: dorsal;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--linea);
+  font-size: 15px;
+}
+ 
+ol li::before {
+  content: counter(dorsal);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--papel);
+  background: var(--tinta);
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  flex: none;
+}
+ 
+ol li button { margin-left: auto; }
+ 
+/* Listado de canchas del admin */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 20px;
+}
+ 
+ul li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--blanco);
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+ 
+ul li button { margin-left: auto; }
+ 
+/* ── Avisos ────────────────────────────────────────────── */
+ 
+.error, .aviso, .codigo {
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  font-size: 14.5px;
+  border: 1.5px solid;
+}
+ 
+.error {
+  color: var(--roja);
+  background: rgba(194, 50, 27, .07);
+  border-color: rgba(194, 50, 27, .3);
+  font-weight: 600;
+}
+ 
+.aviso {
+  color: var(--verde);
+  background: rgba(31, 138, 84, .08);
+  border-color: rgba(31, 138, 84, .3);
+  font-weight: 600;
+}
+ 
+/* El código de 4 dígitos es lo único que el usuario tiene que
+   guardarse, así que se muestra como lo que es: una llave. */
+.codigo {
+  background: var(--blanco);
+  border-color: var(--pechera);
+  border-width: 2px;
+}
+ 
+.codigo strong {
+  display: block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  color: var(--pechera);
+  margin-bottom: 4px;
+}
+ 
+/* ── Bloques de contenido ──────────────────────────────── */
+ 
+.tarjeta {
+  background: var(--blanco);
+  border: 1.5px solid var(--linea);
+  border-radius: 12px;
+  padding: 18px;
+  margin: 18px 0;
+  box-shadow: var(--sombra);
+}
+ 
+/* Barra de filtros del panel de turnos */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+ 
+.filtros button {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  background: none;
+  color: var(--gris);
+  border-color: var(--linea);
+  border-radius: 999px;
+}
+ 
+.filtros button:hover { color: var(--tinta); border-color: var(--tinta); }
+ 
+/* El filtro activo está deshabilitado, así que lo pintamos ahí */
+.filtros button:disabled {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--papel);
+}
+ 
+.filtros label { margin: 0 0 0 4px; }
+ 
+/* ── Celular ───────────────────────────────────────────── */
+ 
+@media (max-width: 620px) {
+  h1 { font-size: 22px; }
+  h2 { font-size: 20px; }
+  main { padding: 18px 14px 50px; }
+  header { padding: 12px 14px 10px; }
+  input, select { max-width: 100%; }
+  button { width: 100%; margin-bottom: 8px; }
+  td button, ol li button, ul li button, nav button, .filtros button { width: auto; margin-bottom: 0; }
+}
+ 
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

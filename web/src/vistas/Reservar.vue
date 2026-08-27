@@ -127,35 +127,37 @@ onMounted(cargar);
       </select>
     </label>
 
-    <p v-if="codigoNuevo">
+    <p v-if="codigoNuevo" class="codigo">
       <strong>¡Listo! Tu código es {{ codigoNuevo }}</strong><br />
       Anotalo: con ese código vas a poder ver y cancelar tu turno.
     </p>
 
-    <table border="1" cellpadding="6">
-      <thead>
-        <tr>
-          <th>Hora</th>
-          <th v-for="c in complejo.canchas" :key="c.id">{{ c.nombre }} (F{{ c.tipo }})</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="h in horarios" :key="h">
-          <td>{{ h }}:00</td>
-          <td v-for="c in complejo.canchas" :key="c.id">
-            <template v-if="turnoEn(c.id, h)">
-              {{ turnoEn(c.id, h).local.nombre }}
-              <template v-if="turnoEn(c.id, h).visitante">
-                vs {{ turnoEn(c.id, h).visitante.nombre }}
+    <div class="tabla">
+      <table>
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th v-for="c in complejo.canchas" :key="c.id">{{ c.nombre }} (F{{ c.tipo }})</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="h in horarios" :key="h">
+            <td>{{ h }}:00</td>
+            <td v-for="c in complejo.canchas" :key="c.id">
+              <template v-if="turnoEn(c.id, h)">
+                {{ turnoEn(c.id, h).local.nombre }}
+                <template v-if="turnoEn(c.id, h).visitante">
+                  vs {{ turnoEn(c.id, h).visitante.nombre }}
+                </template>
+                <button v-else @click="abrirContra(turnoEn(c.id, h))">Anotarme de contra</button>
               </template>
-              <button v-else @click="abrirContra(turnoEn(c.id, h))">Anotarme de contra</button>
-            </template>
-            <span v-else-if="yaPaso(h)">—</span>
-            <button v-else @click="abrirFormulario(c.id, h)">Reservar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+              <span v-else-if="yaPaso(h)">—</span>
+              <button v-else @click="abrirFormulario(c.id, h)">Reservar</button>
+            </td>
+          </tr>
+        </tbody>
+          </table>
+    </div>
 
     <p v-if="!complejo.canchas.length">El complejo todavía no publicó canchas.</p>
 
@@ -178,10 +180,10 @@ onMounted(cargar);
         :pedir-contacto="false"
       />
 
-      <p v-if="error" style="color: #c00">{{ error }}</p>
+      <p v-if="error" class="error">{{ error }}</p>
 
       <button @click="guardar">Guardar turno</button>
-      <button @click="seleccion = null">Cancelar</button>
+      <button @click="seleccion = null" class="hueco">Cancelar</button>
     </div>
 
     <div v-if="anotandose">
@@ -194,10 +196,10 @@ onMounted(cargar);
 
       <EditorEquipo titulo="Mi equipo" v-model="equipoContra" :cupo="cupoDeContra" />
 
-      <p v-if="error" style="color: #c00">{{ error }}</p>
+      <p v-if="error" class="error">{{ error }}</p>
 
       <button @click="anotarseDeContra">Confirmar</button>
-      <button @click="anotandose = null">Cancelar</button>
+      <button @click="anotandose = null" class="hueco">Cancelar</button>
     </div>
   </div>
 
