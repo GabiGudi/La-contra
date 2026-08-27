@@ -155,3 +155,71 @@ rutasTurnos.get("/", async (req, res) => {
     }))
   );
 });
+
+rutasTurnos.post("/:id/contra", async (req, res) => {
+  const { equipo } = req.body;
+
+  if (!equipo?.nombre?.trim()) {
+    return res.status(400).json({ error: "Poné el nombre de tu equipo." });
+  }
+  if (!equipo?.contacto?.trim()) {
+    return res.status(400).json({ error: "Dejá un teléfono de contacto." });
+  }
+
+  const jugadores = limpiarJugadores(equipo.jugadores);
+  if (jugadores.length === 0) {
+    return res.status(400).json({ error: "Cargá al menos un jugador." });
+  }
+
+  const { rows: turnos } = await pool.query(
+    `SELECT t.id, t.estado, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora, c.tipo
+       FROM turnos t JOIN canchas c ON c.id = t.cancha_id
+      WHERE t.id = $1`,
+    [req.params.id]
+  );
+  if (turnos.length === 0) return res.status(404).json({ error: "Ese turno no existe." });
+
+  const turno = turnos[0];
+  if (turno.estado !== "esperando") {
+    return res.status(409).json({ error: "Ese turno ya tiene contra." });
+  }
+  if (jugadores.length > turno.tipo) {
+    return res.status(400).json({ error: `Se anotan hasta ${turno.tipo} jugadores por equipo.` });
+  }
+
+  const inicio = new Date(`${turno.fecha}T${String(turno.hora).padStart(2, "0")}:00:00`);
+  if (inicio.getTime() < Date.now()) {
+    return res.status(400).json({ error: "Ese turno ya pasó." });
+  }
+
+  const cliente = await pool.connect();
+  try {
+    await cliente.query("BEGIN");
+
+    // La condición del estado va acá adentro, no en un if de arriba:
+    // si dos equipos se anotan en el mismo instante, solo uno actualiza
+    // la fila y el otro recibe 0 filas afectadas.
+    const codigoVisitante = await generarCodigo();
+    const { rowCount } = await cliente.query(
+      `UPDATE turnos SET estado = 'confirmado', codigo_visitante = $2
+        WHERE id = $1 AND estado = 'esperando'`,
+      [turno.id, codigoVisitante]
+    );
+
+    if (rowCount === 0) {
+      await cliente.query("ROLLBACK");
+      return res.status(409).json({ error: "Otro equipo se anotó primero." });
+    }
+
+    await guardarEquipo(cliente, turno.id, "visitante", equipo, jugadores);
+    await cliente.query("COMMIT");
+
+    res.json({ codigo: codigoVisitante });
+  } catch (e) {
+    await cliente.query("ROLLBACK");
+    console.error(e);
+    res.status(500).json({ error: "No se pudo anotar el equipo." });
+  } finally {
+    cliente.release();
+  }
+});

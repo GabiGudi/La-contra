@@ -1,0 +1,1 @@
+ALTER TABLE turnos ADD COLUMN codigo_visitante CHAR(4);

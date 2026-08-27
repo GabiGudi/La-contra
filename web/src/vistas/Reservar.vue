@@ -12,6 +12,9 @@ const buscaContra = ref(true);
 const local = ref({ nombre: "", contacto: "", jugadores: [] });
 const visitante = ref({ nombre: "", contacto: "", jugadores: [] });
 
+const anotandose = ref(null); // el turno al que me estoy anotando de contra
+const equipoContra = ref({ nombre: "", contacto: "", jugadores: [] });
+
 // Próximos 14 días
 const dias = Array.from({ length: 14 }, (_, i) => {
   const d = new Date();
@@ -33,6 +36,11 @@ const cupoDeCancha = computed(() => {
   return c ? c.tipo : 0;
 });
 
+const cupoDeContra = computed(() => {
+  const c = complejo.value?.canchas.find((x) => x.id === anotandose.value?.cancha_id);
+  return c ? c.tipo : 0;
+});
+
 const turnoEn = (canchaId, hora) =>
   turnos.value.find((t) => t.cancha_id === canchaId && t.fecha === fechaSel.value && t.hora === hora);
 
@@ -49,9 +57,18 @@ async function cargar() {
 
 function abrirFormulario(canchaId, hora) {
   seleccion.value = { canchaId, hora };
+  anotandose.value = null;
   buscaContra.value = true;
   local.value = { nombre: "", contacto: "", jugadores: [] };
   visitante.value = { nombre: "", contacto: "", jugadores: [] };
+  error.value = "";
+  codigoNuevo.value = "";
+}
+
+function abrirContra(turno) {
+  anotandose.value = turno;
+  seleccion.value = null;
+  equipoContra.value = { nombre: "", contacto: "", jugadores: [] };
   error.value = "";
   codigoNuevo.value = "";
 }
@@ -80,6 +97,22 @@ async function guardar() {
   cargar();
 }
 
+async function anotarseDeContra() {
+  error.value = "";
+  const r = await fetch(`/api/turnos/${anotandose.value.id}/contra`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ equipo: equipoContra.value }),
+  });
+  const datos = await r.json();
+
+  if (!r.ok) return (error.value = datos.error);
+
+  codigoNuevo.value = datos.codigo;
+  anotandose.value = null;
+  cargar();
+}
+
 onMounted(cargar);
 </script>
 
@@ -95,7 +128,7 @@ onMounted(cargar);
     </label>
 
     <p v-if="codigoNuevo">
-      <strong>¡Turno guardado! Tu código es {{ codigoNuevo }}</strong><br />
+      <strong>¡Listo! Tu código es {{ codigoNuevo }}</strong><br />
       Anotalo: con ese código vas a poder ver y cancelar tu turno.
     </p>
 
@@ -115,7 +148,7 @@ onMounted(cargar);
               <template v-if="turnoEn(c.id, h).visitante">
                 vs {{ turnoEn(c.id, h).visitante.nombre }}
               </template>
-              <em v-else>(busca contra)</em>
+              <button v-else @click="abrirContra(turnoEn(c.id, h))">Anotarme de contra</button>
             </template>
             <span v-else-if="yaPaso(h)">—</span>
             <button v-else @click="abrirFormulario(c.id, h)">Reservar</button>
@@ -149,6 +182,22 @@ onMounted(cargar);
 
       <button @click="guardar">Guardar turno</button>
       <button @click="seleccion = null">Cancelar</button>
+    </div>
+
+    <div v-if="anotandose">
+      <h3>Jugar contra {{ anotandose.local.nombre }}</h3>
+      <p>
+        {{ anotandose.fecha }} a las {{ anotandose.hora }}:00 ·
+        {{ anotandose.local.jugadores.length }} jugadores anotados ·
+        Contacto: {{ anotandose.local.contacto }}
+      </p>
+
+      <EditorEquipo titulo="Mi equipo" v-model="equipoContra" :cupo="cupoDeContra" />
+
+      <p v-if="error" style="color: #c00">{{ error }}</p>
+
+      <button @click="anotarseDeContra">Confirmar</button>
+      <button @click="anotandose = null">Cancelar</button>
     </div>
   </div>
 
