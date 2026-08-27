@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { pedirComoAdmin } from "../auth.js";
 
 const complejo = ref(null);
 const nuevaCancha = ref({ nombre: "", tipo: 5 });
@@ -15,7 +16,7 @@ async function cargar() {
 
 async function guardarDatos() {
   error.value = "";
-  const r = await fetch("/api/complejo", {
+  const r = await pedirComoAdmin("/api/complejo", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -33,7 +34,7 @@ async function guardarDatos() {
 
 async function agregarCancha() {
   error.value = "";
-  const r = await fetch("/api/canchas", {
+  const r = await pedirComoAdmin("/api/canchas", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -50,7 +51,7 @@ async function agregarCancha() {
 
 async function eliminarCancha(id) {
   if (!confirm("¿Eliminar esta cancha?")) return;
-  const r = await fetch(`/api/canchas/${id}`, { method: "DELETE" });
+  const r = await pedirComoAdmin(`/api/canchas/${id}`, { method: "DELETE" });
   if (!r.ok) {
     const datos = await r.json();
     return (error.value = datos.error);

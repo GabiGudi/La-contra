@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { pool } from "../db.js";
+import { exigirAdmin } from "../auth.js";
 
 export const rutasTurnos = Router();
 
@@ -311,7 +312,7 @@ rutasTurnos.delete("/codigo/:codigo", async (req, res) => {
 });
 
 /** Listado para el admin: incluye los códigos y permite filtrar. */
-rutasTurnos.get("/admin", async (req, res) => {
+rutasTurnos.get("/admin", exigirAdmin, async (req, res) => {
   const { estado, desde } = req.query;
 
   const { rows: turnos } = await pool.query(
@@ -351,7 +352,7 @@ rutasTurnos.get("/admin", async (req, res) => {
 });
 
 /** El admin borra cualquier turno, sin límite de horario. */
-rutasTurnos.delete("/:id", async (req, res) => {
+rutasTurnos.delete("/:id", exigirAdmin, async (req, res) => {
   const { rowCount } = await pool.query("DELETE FROM turnos WHERE id = $1", [req.params.id]);
   if (rowCount === 0) return res.status(404).json({ error: "Ese turno no existe." });
   res.json({ eliminado: true });

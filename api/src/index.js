@@ -1,9 +1,17 @@
 import express from "express";
 import { pool } from "./db.js";
 import { rutasTurnos } from "./rutas/turnos.js";
+import { emitirToken, exigirAdmin } from "./auth.js";
 
 const app = express();
 app.use(express.json());
+
+app.post("/api/login", (req, res) => {
+  if (req.body?.clave !== process.env.CLAVE_ADMIN) {
+    return res.status(401).json({ error: "Clave incorrecta." });
+  }
+  res.json({ token: emitirToken() });
+});
 
 app.get("/api/ping", (req, res) => {
   res.json({ mensaje: "La API está viva" });
@@ -33,7 +41,7 @@ app.listen(3000, () => {
 });
 
 // Cambiar nombre y horarios
-app.put("/api/complejo", async (req, res) => {
+app.put("/api/complejo", exigirAdmin, async (req, res) => {
   const { nombre, apertura, cierre } = req.body;
 
   if (!nombre || !nombre.trim()) {
@@ -51,7 +59,7 @@ app.put("/api/complejo", async (req, res) => {
 });
 
 // Agregar cancha
-app.post("/api/canchas", async (req, res) => {
+app.post("/api/canchas", exigirAdmin, async (req, res) => {
   const { complejoId, nombre, tipo } = req.body;
 
   if (![5, 7].includes(Number(tipo))) {
@@ -69,7 +77,7 @@ app.post("/api/canchas", async (req, res) => {
 });
 
 // Eliminar cancha
-app.delete("/api/canchas/:id", async (req, res) => {
+app.delete("/api/canchas/:id", exigirAdmin, async (req, res) => {
   const { rowCount } = await pool.query("DELETE FROM canchas WHERE id = $1", [req.params.id]);
   if (rowCount === 0) {
     return res.status(404).json({ error: "Esa cancha no existe." });
