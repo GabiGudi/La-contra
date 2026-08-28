@@ -6,9 +6,10 @@ const complejo = ref(null);
 const turnos = ref([]);
 const error = ref("");
 const codigoNuevo = ref("");
+const fallo = ref(false);
 
-const canchaSel = ref(null); // la cancha que estoy mirando
-const seleccion = ref(null); // { canchaId, hora } que estoy reservando
+const canchaSel = ref(null);
+const seleccion = ref(null);
 const buscaContra = ref(true);
 const local = ref({ nombre: "", contacto: "", jugadores: [] });
 const visitante = ref({ nombre: "", contacto: "", jugadores: [] });
@@ -16,7 +17,6 @@ const visitante = ref({ nombre: "", contacto: "", jugadores: [] });
 const anotandose = ref(null);
 const equipoContra = ref({ nombre: "", contacto: "", jugadores: [] });
 
-// Próximos 14 días
 const dias = Array.from({ length: 14 }, (_, i) => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -32,15 +32,15 @@ const horarios = computed(() => {
   return salida;
 });
 
+const cupoDeCancha = computed(() => canchaSel.value?.tipo || 0);
+
 const yaPaso = (hora) => new Date(`${fechaSel.value}T${String(hora).padStart(2, "0")}:00:00`) < new Date();
 
 const turnoEn = (canchaId, hora) =>
   turnos.value.find((t) => t.cancha_id === canchaId && t.fecha === fechaSel.value && t.hora === hora);
 
-/** Horas sin reservar y que todavía no pasaron. */
 const libresDe = (canchaId) => horarios.value.filter((h) => !turnoEn(canchaId, h) && !yaPaso(h));
 
-/** Partidos de esta cancha a los que alguien se puede sumar. */
 const contrasDe = (canchaId) =>
   horarios.value
     .map((h) => turnoEn(canchaId, h))
@@ -49,15 +49,19 @@ const contrasDe = (canchaId) =>
 const libresEnCancha = computed(() => (canchaSel.value ? libresDe(canchaSel.value.id) : []));
 const contrasEnCancha = computed(() => (canchaSel.value ? contrasDe(canchaSel.value.id) : []));
 
-const cupoDeCancha = computed(() => canchaSel.value?.tipo || 0);
-
 async function cargar() {
-  const [rc, rt] = await Promise.all([
-    fetch("/api/complejo"),
-    fetch(`/api/turnos?desde=${dias[0]}&hasta=${dias.at(-1)}`),
-  ]);
-  complejo.value = await rc.json();
-  turnos.value = await rt.json();
+  fallo.value = false;
+  try {
+    const [rc, rt] = await Promise.all([
+      fetch("/api/complejo"),
+      fetch(`/api/turnos?desde=${dias[0]}&hasta=${dias.at(-1)}`),
+    ]);
+    if (!rc.ok || !rt.ok) throw new Error("respuesta con error");
+    complejo.value = await rc.json();
+    turnos.value = await rt.json();
+  } catch {
+    fallo.value = true;
+  }
 }
 
 function elegirCancha(cancha) {
@@ -153,7 +157,7 @@ onMounted(cargar);
       Guardá este código: con él vas a poder ver y cancelar tu turno.
     </p>
 
-    <!-- ── Paso 1: elegir cancha ── -->
+    <!-- Paso 1: elegir cancha -->
     <template v-if="!canchaSel">
       <p v-if="!complejo.canchas.length">El complejo todavía no publicó canchas.</p>
 
@@ -161,9 +165,7 @@ onMounted(cargar);
         <li v-for="c in complejo.canchas" :key="c.id">
           <span>
             {{ c.nombre }} · fútbol {{ c.tipo }}<br />
-            <span v-if="libresDe(c.id).length" class="armado">
-              {{ libresDe(c.id).length }} libre(s)
-            </span>
+            <span v-if="libresDe(c.id).length" class="armado">{{ libresDe(c.id).length }} libre(s)</span>
             <span v-else class="busca">Sin turnos</span>
             <span v-if="contrasDe(c.id).length" class="busca">
               {{ contrasDe(c.id).length }} busca(n) contra
@@ -174,7 +176,7 @@ onMounted(cargar);
       </ul>
     </template>
 
-    <!-- ── Paso 2: turnos de esa cancha ── -->
+    <!-- Paso 2: turnos de esa cancha -->
     <template v-else>
       <button class="hueco" @click="volver">← Todas las canchas</button>
 
@@ -194,11 +196,14 @@ onMounted(cargar);
       <template v-if="contrasEnCancha.length">
         <h4>Buscan contra</h4>
         <ul>
-          <li v-for="t in contrasEnCancha" :key="t.id">
-            <span>
-              {{ t.hora }}:00 · {{ t.local.nombre }}<br />
+          <li v-for="t in contrasEnCancha" :key="t.id" class="anotado">
+            <div>
+              <strong>{{ t.hora }}:00 · {{ t.local.nombre }}</strong>
               <span class="busca">{{ t.local.jugadores.length }}/{{ canchaSel.tipo }} jugadores</span>
-            </span>
+              <ol class="equipo-lista">
+                <li v-for="(j, i) in t.local.jugadores" :key="i">{{ j }}</li>
+              </ol>
+            </div>
             <button @click="abrirContra(t)">Anotarme</button>
           </li>
         </ul>
@@ -208,12 +213,8 @@ onMounted(cargar);
       <div v-if="seleccion" class="tarjeta">
         <h3>Reservar {{ fechaSel }} a las {{ seleccion.hora }}:00</h3>
 
-        <label>
-          <input type="radio" :value="true" v-model="buscaContra" /> Busco contra
-        </label>
-        <label>
-          <input type="radio" :value="false" v-model="buscaContra" /> Ya tengo contra
-        </label>
+        <label><input type="radio" :value="true" v-model="buscaContra" /> Busco contra</label>
+        <label><input type="radio" :value="false" v-model="buscaContra" /> Ya tengo contra</label>
 
         <EditorEquipo titulo="Mi equipo" v-model="local" :cupo="cupoDeCancha" />
         <EditorEquipo
@@ -235,9 +236,12 @@ onMounted(cargar);
         <h3>Jugar contra {{ anotandose.local.nombre }}</h3>
         <p>
           {{ fechaSel }} a las {{ anotandose.hora }}:00 ·
-          {{ anotandose.local.jugadores.length }} jugadores anotados ·
-          Contacto: {{ anotandose.local.contacto }}
+          {{ anotandose.local.jugadores.length }} jugadores anotados
         </p>
+        <ol class="equipo-lista">
+          <li v-for="(j, i) in anotandose.local.jugadores" :key="i">{{ j }}</li>
+        </ol>
+        <p class="cx-nota">Cuando te anotes vas a ver su teléfono en "Mi turno", con tu código.</p>
 
         <EditorEquipo titulo="Mi equipo" v-model="equipoContra" :cupo="cupoDeCancha" />
 
@@ -249,5 +253,9 @@ onMounted(cargar);
     </template>
   </div>
 
+  <p v-else-if="fallo" class="error">
+    No pudimos conectarnos con el servidor.
+    <button class="hueco" @click="cargar">Reintentar</button>
+  </p>
   <p v-else>Cargando…</p>
 </template>

@@ -483,3 +483,9 @@ ul li button { margin-left: auto; }
 /* El botón de sumar jugador no va pegado al campo */
 fieldset > button { margin-top: 10px; }
 fieldset > p:last-child { margin: 10px 0 0; color: var(--gris); font-size: 13.5px; }
+
+/* Lista de jugadores dentro de una tarjeta de turno */
+.anotado { flex-direction: column; align-items: stretch; gap: 8px; }
+.anotado ol.equipo-lista { margin: 6px 0 0; }
+.anotado ol.equipo-lista li { border: 0; padding: 3px 0; font-size: 13.5px; }
+.anotado button { align-self: flex-start; }
