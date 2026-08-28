@@ -1,473 +1,419 @@
 /* ══════════════════════════════════════════════════════════
    LA CONTRA · hoja de estilos
-   Dirección "Pechera": planilla clara, legible al sol, con el
-   naranja de las pecheras de entrenamiento como único acento
-   fuerte. Pensada para el celular primero.
+   Verde césped bajo luz artificial sobre gris oscuro cálido.
+   Barra lateral en escritorio, barra inferior en el celular.
    ══════════════════════════════════════════════════════════ */
- 
+
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&display=swap');
- 
+
 :root {
-  --papel: #F7F6F2;
-  --blanco: #FFFFFF;
-  --tinta: #14161A;
-  --gris: #6E7278;
-  --linea: #DDDAD2;
-  --pechera: #FF5B1F;
-  --verde: #1F8A54;
-  --roja: #C2321B;
- 
+  --fondo: #15181A;
+  --panel: #1E2225;
+  --panel-alto: #262B2E;
+  --borde: #2C3134;
+  --texto: #E9EDEA;
+  --suave: #8D9691;
+
+  --verde: #5FA463;
+  --verde-suave: rgba(95, 164, 99, .16);
+  --sobre-verde: #0C1A0E;
+
+  --ambar: #D98032;
+  --ambar-suave: rgba(217, 128, 50, .16);
+
+  --roja: #C7523F;
+  --roja-suave: rgba(199, 82, 63, .14);
+
   --radio: 10px;
-  --sombra: 0 1px 2px rgba(20, 22, 26, .06);
+  --lateral: 200px;
+  --abajo: 62px;
 }
- 
+
 * { box-sizing: border-box; }
- 
+
 body {
   margin: 0;
-  background: var(--papel);
-  color: var(--tinta);
+  background: var(--fondo);
+  color: var(--texto);
   font-family: Archivo, system-ui, -apple-system, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
- 
+
+/* ── Estructura ────────────────────────────────────────── */
+
+.app { display: flex; min-height: 100vh; }
+
+.lateral {
+  width: var(--lateral);
+  flex: none;
+  background: var(--panel);
+  border-right: 1px solid var(--borde);
+  padding: 18px 12px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.marca {
+  font-family: "Archivo Black", sans-serif;
+  font-size: 18px;
+  letter-spacing: -.02em;
+  margin: 0 0 20px;
+  padding: 0 8px;
+}
+
+.marca b { color: var(--verde); }
+
+.lateral nav { display: flex; flex-direction: column; gap: 2px; }
+
+.lateral nav a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: var(--suave);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.lateral nav a:hover { background: var(--panel-alto); color: var(--texto); }
+
+.lateral nav a.router-link-active {
+  background: var(--verde);
+  color: var(--sobre-verde);
+  font-weight: 700;
+}
+
+.lateral .separador {
+  height: 1px;
+  background: var(--borde);
+  margin: 12px 8px;
+}
+
+.lateral .salir {
+  width: auto;
+  margin-top: 8px;
+  background: none;
+  border: 1px solid var(--borde);
+  color: var(--suave);
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.principal { flex: 1; min-width: 0; }
+
+main {
+  max-width: 1000px;
+  padding: 24px 22px 60px;
+}
+
+/* Estas dos solo aparecen en el celular */
+.barra-top { display: none; }
+.barra-abajo { display: none; }
+
 /* ── Tipografía ────────────────────────────────────────── */
- 
+
 h1, h2, h3, h4 {
   font-family: "Archivo Black", Archivo, sans-serif;
   letter-spacing: -.02em;
-  line-height: 1.1;
+  line-height: 1.15;
   margin: 0 0 12px;
 }
- 
-h1 { font-size: 26px; }
-h2 { font-size: 24px; margin-top: 4px; }
-h3 { font-size: 19px; margin-top: 28px; }
-h4 { font-size: 15px; margin-bottom: 6px; }
- 
-p { margin: 0 0 12px; }
- 
-em { color: var(--gris); font-style: normal; }
- 
-/* ── Encabezado y navegación ───────────────────────────── */
- 
-header {
-  background: var(--blanco);
-  border-bottom: 2px solid var(--linea);
-  padding: 14px 18px 12px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
- 
-header h1 { margin: 0 0 10px; }
- 
-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  font-size: 0;               /* se come los "|" sueltos del template */
-}
- 
-nav a {
-  font-family: Archivo, sans-serif;
-  font-size: 13.5px;
+
+h2 { font-size: 23px; }
+h3 { font-size: 18px; margin-top: 26px; }
+
+h4 {
+  font-size: 11px;
+  font-family: "IBM Plex Mono", monospace;
   font-weight: 600;
-  text-decoration: none;
-  color: var(--gris);
-  padding: 7px 14px;
-  border: 1.5px solid var(--linea);
-  border-radius: 999px;
-  transition: border-color .15s, color .15s;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--suave);
+  margin: 22px 0 8px;
 }
- 
-nav a:hover { color: var(--tinta); border-color: var(--tinta); }
- 
-nav a.router-link-active {
-  background: var(--tinta);
-  border-color: var(--tinta);
-  color: var(--papel);
-}
- 
-nav button {
-  font-size: 13px;
-  padding: 7px 14px;
-  background: none;
-  border: 1.5px solid var(--linea);
-  color: var(--gris);
-}
- 
-main {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 22px 18px 60px;
-}
- 
+
+p { margin: 0 0 12px; }
+em { color: var(--suave); font-style: normal; }
+
 /* ── Formularios ───────────────────────────────────────── */
- 
+
 label {
   display: block;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--gris);
-  margin-bottom: 12px;
+  color: var(--suave);
+  margin-bottom: 14px;
 }
- 
+
 input, select {
   display: block;
   width: 100%;
   max-width: 340px;
-  margin-top: 5px;
+  margin-top: 6px;
   padding: 11px 12px;
   font-family: Archivo, sans-serif;
   font-size: 15px;
-  color: var(--tinta);
-  background: var(--blanco);
-  border: 1.5px solid var(--linea);
+  color: var(--texto);
+  background: var(--fondo);
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
 }
- 
+
+select option { background: var(--panel); color: var(--texto); }
+
+input::placeholder { color: #66706B; }
+
 input:focus, select:focus {
   outline: none;
-  border-color: var(--pechera);
-  box-shadow: 0 0 0 3px rgba(255, 91, 31, .18);
+  border-color: var(--verde);
+  box-shadow: 0 0 0 3px var(--verde-suave);
 }
- 
-input:disabled {
-  background: var(--papel);
-  color: var(--gris);
-  cursor: not-allowed;
-}
- 
-/* Los radios y checkboxes van en línea con su texto */
+
+input:disabled { opacity: .45; cursor: not-allowed; }
+
 label:has(input[type="radio"]),
 label:has(input[type="checkbox"]) {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  margin-right: 16px;
+  gap: 8px;
+  margin-right: 18px;
   font-size: 14.5px;
-  color: var(--tinta);
+  color: var(--texto);
 }
- 
+
 input[type="radio"], input[type="checkbox"] {
   width: auto;
   margin: 0;
-  accent-color: var(--pechera);
+  accent-color: var(--verde);
 }
- 
+
 /* ── Botones ───────────────────────────────────────────── */
- 
+
 button {
   font-family: Archivo, sans-serif;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: -.01em;
-  color: var(--blanco);
-  background: var(--pechera);
-  border: 1.5px solid var(--pechera);
+  color: var(--sobre-verde);
+  background: var(--verde);
+  border: 1px solid var(--verde);
   border-radius: var(--radio);
   padding: 10px 16px;
   cursor: pointer;
   transition: filter .15s;
 }
- 
-button:hover { filter: brightness(1.07); }
-button:active { filter: brightness(.94); }
- 
+
+button:hover { filter: brightness(1.1); }
+button:active { filter: brightness(.93); }
+
 button:disabled {
-  background: var(--linea);
-  border-color: var(--linea);
-  color: var(--gris);
+  background: var(--panel-alto);
+  border-color: var(--borde);
+  color: var(--suave);
   cursor: default;
   filter: none;
 }
- 
-/* Secundario: el que no es la acción principal de la pantalla */
+
 button.hueco {
   background: none;
-  color: var(--tinta);
-  border-color: var(--tinta);
+  color: var(--texto);
+  border-color: var(--borde);
 }
- 
-/* Destructivo: cancelar, eliminar, dar de baja */
+
+button.hueco:hover { border-color: var(--suave); }
+
 button.peligro {
   background: none;
   color: var(--roja);
-  border-color: var(--roja);
+  border-color: rgba(199, 82, 63, .45);
 }
- 
-/* Chico: quitar un jugador, acciones dentro de una fila */
+
+button.peligro:hover { background: var(--roja-suave); }
+
 button.chico {
   font-size: 12px;
   font-weight: 600;
   padding: 5px 10px;
   background: none;
-  color: var(--gris);
-  border-color: var(--linea);
+  color: var(--suave);
+  border-color: var(--borde);
 }
- 
+
 button.chico:hover { color: var(--roja); border-color: var(--roja); }
- 
+
+/* ── Paneles ───────────────────────────────────────────── */
+
+.tarjeta, fieldset {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 18px;
+  margin: 18px 0;
+}
+
+legend {
+  font-family: "Archivo Black", sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 4px 10px;
+  background: var(--verde);
+  color: var(--sobre-verde);
+  border-radius: 6px;
+}
+
 /* ── Tablas ────────────────────────────────────────────── */
- 
+
 .tabla {
   overflow-x: auto;
   margin: 0 0 20px;
   -webkit-overflow-scrolling: touch;
 }
- 
+
 table {
   width: 100%;
-  min-width: 460px;
+  min-width: 520px;
   border-collapse: collapse;
-  background: var(--blanco);
-  border: 1.5px solid var(--linea);
-  border-radius: var(--radio);
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
   overflow: hidden;
 }
- 
+
 th {
   text-align: left;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .07em;
-  color: var(--gris);
-  background: var(--papel);
-  padding: 10px 12px;
-  border-bottom: 1.5px solid var(--linea);
+  letter-spacing: .08em;
+  color: var(--suave);
+  background: var(--fondo);
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--borde);
   white-space: nowrap;
 }
- 
+
 td {
-  padding: 12px;
-  border-top: 1.5px solid var(--linea);
-  font-size: 14.5px;
+  padding: 12px 13px;
+  border-top: 1px solid var(--borde);
+  font-size: 14px;
   vertical-align: middle;
 }
- 
+
 tbody tr:first-child td { border-top: 0; }
- 
-/* La primera columna de las dos grillas es la hora */
+tbody tr:hover td { background: var(--panel-alto); }
+
 td:first-child {
   font-family: "IBM Plex Mono", monospace;
   font-weight: 600;
-  font-size: 15px;
   white-space: nowrap;
 }
- 
-/* Los botones dentro de una tabla no se comen la fila */
-td button { padding: 8px 12px; font-size: 13px; }
- 
-/* ── Estados del turno ─────────────────────────────────── */
- 
+
+td button { padding: 7px 12px; font-size: 12.5px; }
+
+/* ── Estados ───────────────────────────────────────────── */
+
 .busca, .armado {
   display: inline-block;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .06em;
-  padding: 3px 9px;
+  padding: 4px 9px;
   border-radius: 999px;
+  white-space: nowrap;
 }
- 
-.busca {
-  color: var(--pechera);
-  background: rgba(255, 91, 31, .12);
-}
- 
-.armado {
-  color: var(--verde);
-  background: rgba(31, 138, 84, .12);
-}
- 
-/* ── Equipos y jugadores ───────────────────────────────── */
- 
-fieldset {
-  background: var(--blanco);
-  border: 1.5px solid var(--linea);
-  border-radius: 12px;
-  padding: 16px;
-  margin: 16px 0;
-  box-shadow: var(--sombra);
-}
- 
-legend {
-  font-family: "Archivo Black", sans-serif;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  padding: 3px 10px;
-  background: var(--tinta);
-  color: var(--papel);
-  border-radius: 6px;
-}
- 
-/* La lista de jugadores se lee como una formación: dorsal y nombre */
+
+.busca { color: var(--ambar); background: var(--ambar-suave); }
+.armado { color: var(--verde); background: var(--verde-suave); }
+
+/* ── Listas ────────────────────────────────────────────── */
+
+/* Jugadores: se lee como una formación, con dorsal */
 ol {
   list-style: none;
   counter-reset: dorsal;
   padding: 0;
   margin: 10px 0;
 }
- 
+
 ol li {
   counter-increment: dorsal;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 7px 0;
-  border-top: 1px solid var(--linea);
-  font-size: 15px;
+  border-top: 1px solid var(--borde);
+  font-size: 14.5px;
 }
- 
+
 ol li::before {
   content: counter(dorsal);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  color: var(--papel);
-  background: var(--tinta);
-  width: 21px;
-  height: 21px;
+  color: var(--sobre-verde);
+  background: var(--verde);
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   border-radius: 5px;
   flex: none;
 }
- 
+
 ol li button { margin-left: auto; }
- 
-/* Listado de canchas del admin */
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0 20px;
-}
- 
+
+/* Canchas y turnos: la barra de color a la izquierda dice el
+   estado sin necesidad de leer nada */
+ul { list-style: none; padding: 0; margin: 10px 0 20px; }
+
 ul li {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--blanco);
-  border: 1.5px solid var(--linea);
+  gap: 14px;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--verde);
   border-radius: var(--radio);
-  padding: 12px 14px;
+  padding: 13px 15px;
   margin-bottom: 8px;
   font-size: 15px;
-  font-weight: 600;
-}
- 
-ul li button { margin-left: auto; }
- 
-/* ── Avisos ────────────────────────────────────────────── */
- 
-.error, .aviso, .codigo {
-  border-radius: var(--radio);
-  padding: 12px 14px;
-  font-size: 14.5px;
-  border: 1.5px solid;
-}
- 
-.error {
-  color: var(--roja);
-  background: rgba(194, 50, 27, .07);
-  border-color: rgba(194, 50, 27, .3);
-  font-weight: 600;
-}
- 
-.aviso {
-  color: var(--verde);
-  background: rgba(31, 138, 84, .08);
-  border-color: rgba(31, 138, 84, .3);
-  font-weight: 600;
-}
- 
-/* El código de 4 dígitos es lo único que el usuario tiene que
-   guardarse, así que se muestra como lo que es: una llave. */
-.codigo {
-  background: var(--blanco);
-  border-color: var(--pechera);
-  border-width: 2px;
-}
- 
-.codigo strong {
-  display: block;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: .18em;
-  color: var(--pechera);
-  margin-bottom: 4px;
-}
- 
-/* ── Bloques de contenido ──────────────────────────────── */
- 
-.tarjeta {
-  background: var(--blanco);
-  border: 1.5px solid var(--linea);
-  border-radius: 12px;
-  padding: 18px;
-  margin: 18px 0;
-  box-shadow: var(--sombra);
-}
- 
-/* Barra de filtros del panel de turnos */
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 16px;
-}
- 
-.filtros button {
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 14px;
-  background: none;
-  color: var(--gris);
-  border-color: var(--linea);
-  border-radius: 999px;
-}
- 
-.filtros button:hover { color: var(--tinta); border-color: var(--tinta); }
- 
-/* El filtro activo está deshabilitado, así que lo pintamos ahí */
-.filtros button:disabled {
-  background: var(--tinta);
-  border-color: var(--tinta);
-  color: var(--papel);
-}
- 
-.filtros label { margin: 0 0 0 4px; }
- 
-/* ── Celular ───────────────────────────────────────────── */
- 
-@media (max-width: 620px) {
-  h1 { font-size: 22px; }
-  h2 { font-size: 20px; }
-  main { padding: 18px 14px 50px; }
-  header { padding: 12px 14px 10px; }
-  input, select { max-width: 100%; }
-  button { width: 100%; margin-bottom: 8px; }
-  td button, ol li button, ul li button, nav button, .filtros button { width: auto; margin-bottom: 0; }
-}
- 
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
 }
 
-/* Horarios libres de una cancha */
+ul li button { margin-left: auto; }
+
+ul li.anotado {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  border-left-color: var(--ambar);
+}
+
+.anotado ol.equipo-lista { margin: 8px 0 0; }
+
+.anotado ol.equipo-lista li {
+  display: flex;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0;
+  padding: 4px 0;
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.anotado button { align-self: flex-start; margin-left: 0; }
+
+/* Horarios libres */
 .horarios {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(94px, 1fr));
   gap: 8px;
   margin: 10px 0 24px;
 }
@@ -478,14 +424,173 @@ ul li button { margin-left: auto; }
   font-family: "IBM Plex Mono", monospace;
   font-size: 15px;
   font-weight: 600;
-  padding: 14px 0;
+  padding: 15px 0;
+  background: var(--panel);
+  color: var(--texto);
+  border-color: var(--borde);
 }
-/* El botón de sumar jugador no va pegado al campo */
-fieldset > button { margin-top: 10px; }
-fieldset > p:last-child { margin: 10px 0 0; color: var(--gris); font-size: 13.5px; }
 
-/* Lista de jugadores dentro de una tarjeta de turno */
-.anotado { flex-direction: column; align-items: stretch; gap: 8px; }
-.anotado ol.equipo-lista { margin: 6px 0 0; }
-.anotado ol.equipo-lista li { border: 0; padding: 3px 0; font-size: 13.5px; }
-.anotado button { align-self: flex-start; }
+.horarios button:hover { border-color: var(--verde); color: var(--verde); }
+
+/* Filtros */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filtros button {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 999px;
+  background: none;
+  color: var(--suave);
+  border-color: var(--borde);
+}
+
+.filtros button:hover { color: var(--texto); border-color: var(--suave); }
+
+.filtros button:disabled {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: var(--sobre-verde);
+}
+
+.filtros label { margin: 0 0 0 4px; }
+
+/* ── Avisos ────────────────────────────────────────────── */
+
+.error, .aviso, .codigo {
+  border-radius: var(--radio);
+  padding: 13px 15px;
+  font-size: 14.5px;
+  border: 1px solid;
+}
+
+.error {
+  color: var(--roja);
+  background: var(--roja-suave);
+  border-color: rgba(199, 82, 63, .4);
+  font-weight: 600;
+}
+
+.aviso {
+  color: var(--verde);
+  background: var(--verde-suave);
+  border-color: rgba(95, 164, 99, .4);
+  font-weight: 600;
+}
+
+/* El código es lo único que el usuario tiene que guardarse */
+.codigo {
+  background: var(--panel);
+  border-color: var(--verde);
+  color: var(--suave);
+}
+
+.codigo strong {
+  display: block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: .2em;
+  color: var(--verde);
+  margin-bottom: 4px;
+}
+
+.cx-nota { font-size: 12.5px; color: var(--suave); }
+
+/* ── Ingreso del admin ─────────────────────────────────── */
+
+.login {
+  max-width: 340px;
+  margin: 40px auto;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+/* ── Celular ───────────────────────────────────────────── */
+
+@media (max-width: 780px) {
+  .lateral { display: none; }
+
+  .barra-top {
+    display: block;
+    background: var(--panel);
+    border-bottom: 1px solid var(--borde);
+    padding: 13px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .barra-top .marca { margin: 0; padding: 0; font-size: 16px; }
+
+  main { padding: 18px 15px calc(var(--abajo) + 30px); }
+
+  .barra-abajo {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: var(--panel);
+    border-top: 1px solid var(--borde);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .barra-abajo a {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0 14px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--suave);
+    text-decoration: none;
+  }
+
+  .barra-abajo a.router-link-active {
+    color: var(--verde);
+    box-shadow: inset 0 2px 0 var(--verde);
+  }
+
+  h2 { font-size: 21px; }
+  input, select { max-width: 100%; }
+  button { width: 100%; margin: 10px 0 0; }
+  button + button { margin-left: 0; }
+
+  td button, ol li button, ul li button,
+  .filtros button, .horarios button {
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  ul li { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* ── Espacio entre los campos y su botón ──────────────── */
+
+/* En escritorio el botón queda al lado del campo, no pegado */
+fieldset > button,
+.tarjeta > button,
+main > button {
+  margin-top: 12px;
+  margin-right: 8px;
+}
+
+/* Los botones que van juntos no se tocan entre sí */
+button + button { margin-left: 8px; }
+
+/* El buscador de "Mi turno": campo y botón en línea, con aire */
+main > input + button { margin-left: 8px; }
