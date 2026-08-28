@@ -7,12 +7,13 @@ const turnos = ref([]);
 const error = ref("");
 const codigoNuevo = ref("");
 
-const seleccion = ref(null); // { canchaId, hora }
+const canchaSel = ref(null); // la cancha que estoy mirando
+const seleccion = ref(null); // { canchaId, hora } que estoy reservando
 const buscaContra = ref(true);
 const local = ref({ nombre: "", contacto: "", jugadores: [] });
 const visitante = ref({ nombre: "", contacto: "", jugadores: [] });
 
-const anotandose = ref(null); // el turno al que me estoy anotando de contra
+const anotandose = ref(null);
 const equipoContra = ref({ nombre: "", contacto: "", jugadores: [] });
 
 // Próximos 14 días
@@ -31,20 +32,24 @@ const horarios = computed(() => {
   return salida;
 });
 
-const cupoDeCancha = computed(() => {
-  const c = complejo.value?.canchas.find((x) => x.id === seleccion.value?.canchaId);
-  return c ? c.tipo : 0;
-});
-
-const cupoDeContra = computed(() => {
-  const c = complejo.value?.canchas.find((x) => x.id === anotandose.value?.cancha_id);
-  return c ? c.tipo : 0;
-});
+const yaPaso = (hora) => new Date(`${fechaSel.value}T${String(hora).padStart(2, "0")}:00:00`) < new Date();
 
 const turnoEn = (canchaId, hora) =>
   turnos.value.find((t) => t.cancha_id === canchaId && t.fecha === fechaSel.value && t.hora === hora);
 
-const yaPaso = (hora) => new Date(`${fechaSel.value}T${String(hora).padStart(2, "0")}:00:00`) < new Date();
+/** Horas sin reservar y que todavía no pasaron. */
+const libresDe = (canchaId) => horarios.value.filter((h) => !turnoEn(canchaId, h) && !yaPaso(h));
+
+/** Partidos de esta cancha a los que alguien se puede sumar. */
+const contrasDe = (canchaId) =>
+  horarios.value
+    .map((h) => turnoEn(canchaId, h))
+    .filter((t) => t && t.estado === "esperando" && !yaPaso(t.hora));
+
+const libresEnCancha = computed(() => (canchaSel.value ? libresDe(canchaSel.value.id) : []));
+const contrasEnCancha = computed(() => (canchaSel.value ? contrasDe(canchaSel.value.id) : []));
+
+const cupoDeCancha = computed(() => canchaSel.value?.tipo || 0);
 
 async function cargar() {
   const [rc, rt] = await Promise.all([
@@ -55,8 +60,24 @@ async function cargar() {
   turnos.value = await rt.json();
 }
 
-function abrirFormulario(canchaId, hora) {
-  seleccion.value = { canchaId, hora };
+function elegirCancha(cancha) {
+  canchaSel.value = cancha;
+  cerrarFormularios();
+}
+
+function volver() {
+  canchaSel.value = null;
+  cerrarFormularios();
+}
+
+function cerrarFormularios() {
+  seleccion.value = null;
+  anotandose.value = null;
+  error.value = "";
+}
+
+function abrirFormulario(hora) {
+  seleccion.value = { canchaId: canchaSel.value.id, hora };
   anotandose.value = null;
   buscaContra.value = true;
   local.value = { nombre: "", contacto: "", jugadores: [] };
@@ -122,85 +143,110 @@ onMounted(cargar);
 
     <label>
       Día
-      <select v-model="fechaSel">
+      <select v-model="fechaSel" @change="cerrarFormularios">
         <option v-for="d in dias" :key="d" :value="d">{{ d }}</option>
       </select>
     </label>
 
     <p v-if="codigoNuevo" class="codigo">
-      <strong>¡Listo! Tu código es {{ codigoNuevo }}</strong><br />
-      Anotalo: con ese código vas a poder ver y cancelar tu turno.
+      <strong>{{ codigoNuevo }}</strong>
+      Guardá este código: con él vas a poder ver y cancelar tu turno.
     </p>
 
-    <div class="tabla">
-      <table>
-        <thead>
-          <tr>
-            <th>Hora</th>
-            <th v-for="c in complejo.canchas" :key="c.id">{{ c.nombre }} (F{{ c.tipo }})</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="h in horarios" :key="h">
-            <td>{{ h }}:00</td>
-            <td v-for="c in complejo.canchas" :key="c.id">
-              <template v-if="turnoEn(c.id, h)">
-                {{ turnoEn(c.id, h).local.nombre }}
-                <template v-if="turnoEn(c.id, h).visitante">
-                  vs {{ turnoEn(c.id, h).visitante.nombre }}
-                </template>
-                <button v-else @click="abrirContra(turnoEn(c.id, h))">Anotarme de contra</button>
-              </template>
-              <span v-else-if="yaPaso(h)">—</span>
-              <button v-else @click="abrirFormulario(c.id, h)">Reservar</button>
-            </td>
-          </tr>
-        </tbody>
-          </table>
-    </div>
+    <!-- ── Paso 1: elegir cancha ── -->
+    <template v-if="!canchaSel">
+      <p v-if="!complejo.canchas.length">El complejo todavía no publicó canchas.</p>
 
-    <p v-if="!complejo.canchas.length">El complejo todavía no publicó canchas.</p>
+      <ul>
+        <li v-for="c in complejo.canchas" :key="c.id">
+          <span>
+            {{ c.nombre }} · fútbol {{ c.tipo }}<br />
+            <span v-if="libresDe(c.id).length" class="armado">
+              {{ libresDe(c.id).length }} libre(s)
+            </span>
+            <span v-else class="busca">Sin turnos</span>
+            <span v-if="contrasDe(c.id).length" class="busca">
+              {{ contrasDe(c.id).length }} busca(n) contra
+            </span>
+          </span>
+          <button @click="elegirCancha(c)">Ver turnos</button>
+        </li>
+      </ul>
+    </template>
 
-    <div v-if="seleccion">
-      <h3>Reservar {{ fechaSel }} a las {{ seleccion.hora }}:00</h3>
+    <!-- ── Paso 2: turnos de esa cancha ── -->
+    <template v-else>
+      <button class="hueco" @click="volver">← Todas las canchas</button>
 
-      <label>
-        <input type="radio" :value="true" v-model="buscaContra" /> Busco contra
-      </label>
-      <label>
-        <input type="radio" :value="false" v-model="buscaContra" /> Ya tengo contra
-      </label>
+      <h3>{{ canchaSel.nombre }} · fútbol {{ canchaSel.tipo }}</h3>
 
-      <EditorEquipo titulo="Mi equipo" v-model="local" :cupo="cupoDeCancha" />
-      <EditorEquipo
-        v-if="!buscaContra"
-        titulo="Equipo rival"
-        v-model="visitante"
-        :cupo="cupoDeCancha"
-        :pedir-contacto="false"
-      />
+      <template v-if="libresEnCancha.length">
+        <h4>Turnos libres</h4>
+        <div class="horarios">
+          <button v-for="h in libresEnCancha" :key="h" @click="abrirFormulario(h)">{{ h }}:00</button>
+        </div>
+      </template>
 
-      <p v-if="error" class="error">{{ error }}</p>
-
-      <button @click="guardar">Guardar turno</button>
-      <button @click="seleccion = null" class="hueco">Cancelar</button>
-    </div>
-
-    <div v-if="anotandose">
-      <h3>Jugar contra {{ anotandose.local.nombre }}</h3>
-      <p>
-        {{ anotandose.fecha }} a las {{ anotandose.hora }}:00 ·
-        {{ anotandose.local.jugadores.length }} jugadores anotados ·
-        Contacto: {{ anotandose.local.contacto }}
+      <p v-else-if="!contrasEnCancha.length">
+        <strong>No hay más turnos en esta cancha.</strong> Probá con otro día u otra cancha.
       </p>
 
-      <EditorEquipo titulo="Mi equipo" v-model="equipoContra" :cupo="cupoDeContra" />
+      <template v-if="contrasEnCancha.length">
+        <h4>Buscan contra</h4>
+        <ul>
+          <li v-for="t in contrasEnCancha" :key="t.id">
+            <span>
+              {{ t.hora }}:00 · {{ t.local.nombre }}<br />
+              <span class="busca">{{ t.local.jugadores.length }}/{{ canchaSel.tipo }} jugadores</span>
+            </span>
+            <button @click="abrirContra(t)">Anotarme</button>
+          </li>
+        </ul>
+      </template>
 
-      <p v-if="error" class="error">{{ error }}</p>
+      <!-- Reservar un horario libre -->
+      <div v-if="seleccion" class="tarjeta">
+        <h3>Reservar {{ fechaSel }} a las {{ seleccion.hora }}:00</h3>
 
-      <button @click="anotarseDeContra">Confirmar</button>
-      <button @click="anotandose = null" class="hueco">Cancelar</button>
-    </div>
+        <label>
+          <input type="radio" :value="true" v-model="buscaContra" /> Busco contra
+        </label>
+        <label>
+          <input type="radio" :value="false" v-model="buscaContra" /> Ya tengo contra
+        </label>
+
+        <EditorEquipo titulo="Mi equipo" v-model="local" :cupo="cupoDeCancha" />
+        <EditorEquipo
+          v-if="!buscaContra"
+          titulo="Equipo rival"
+          v-model="visitante"
+          :cupo="cupoDeCancha"
+          :pedir-contacto="false"
+        />
+
+        <p v-if="error" class="error">{{ error }}</p>
+
+        <button @click="guardar">Guardar turno</button>
+        <button class="hueco" @click="seleccion = null">Cancelar</button>
+      </div>
+
+      <!-- Anotarse de contra -->
+      <div v-if="anotandose" class="tarjeta">
+        <h3>Jugar contra {{ anotandose.local.nombre }}</h3>
+        <p>
+          {{ fechaSel }} a las {{ anotandose.hora }}:00 ·
+          {{ anotandose.local.jugadores.length }} jugadores anotados ·
+          Contacto: {{ anotandose.local.contacto }}
+        </p>
+
+        <EditorEquipo titulo="Mi equipo" v-model="equipoContra" :cupo="cupoDeCancha" />
+
+        <p v-if="error" class="error">{{ error }}</p>
+
+        <button @click="anotarseDeContra">Confirmar</button>
+        <button class="hueco" @click="anotandose = null">Cancelar</button>
+      </div>
+    </template>
   </div>
 
   <p v-else>Cargando…</p>

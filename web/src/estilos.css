@@ -463,3 +463,23 @@ ul li button { margin-left: auto; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Horarios libres de una cancha */
+.horarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+  margin: 10px 0 24px;
+}
+
+.horarios button {
+  width: 100%;
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 0;
+}
+/* El botón de sumar jugador no va pegado al campo */
+fieldset > button { margin-top: 10px; }
+fieldset > p:last-child { margin: 10px 0 0; color: var(--gris); font-size: 13.5px; }

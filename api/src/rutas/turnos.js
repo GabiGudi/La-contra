@@ -313,7 +313,7 @@ rutasTurnos.delete("/codigo/:codigo", async (req, res) => {
 
 /** Listado para el admin: incluye los códigos y permite filtrar. */
 rutasTurnos.get("/admin", exigirAdmin, async (req, res) => {
-  const { estado, desde } = req.query;
+  const { estado, desde, hasta} = req.query;
 
   const { rows: turnos } = await pool.query(
     `SELECT t.id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora, t.estado,
@@ -321,8 +321,9 @@ rutasTurnos.get("/admin", exigirAdmin, async (req, res) => {
        FROM turnos t JOIN canchas c ON c.id = t.cancha_id
       WHERE ($1::text IS NULL OR t.estado = $1)
         AND ($2::date IS NULL OR t.fecha >= $2)
+        AND ($3::date IS NULL OR t.fecha <= $3)
       ORDER BY t.fecha, t.hora`,
-    [estado || null, desde || null]
+    [estado || null, desde || null, hasta || null]
   );
 
   if (turnos.length === 0) return res.json([]);
