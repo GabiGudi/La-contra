@@ -10,9 +10,9 @@ import {
   puedeCancelar,
   MINUTOS_MINIMOS,
 } from "../reglas.js";
-
+ 
 export const rutasTurnos = Router();
-
+ 
 /** Código de 4 dígitos. Si el azar repite uno, reintenta. */
 async function generarCodigo() {
   for (let intento = 0; intento < 5; intento++) {
@@ -22,7 +22,7 @@ async function generarCodigo() {
   }
   throw new Error("No se pudo generar un código libre");
 }
-
+ 
 async function guardarEquipo(cliente, turnoId, rol, equipo, jugadores) {
   const { rows } = await cliente.query(
     "INSERT INTO equipos (turno_id, rol, nombre, contacto) VALUES ($1,$2,$3,$4) RETURNING id",
@@ -32,7 +32,7 @@ async function guardarEquipo(cliente, turnoId, rol, equipo, jugadores) {
     await cliente.query("INSERT INTO jugadores (equipo_id, nombre) VALUES ($1,$2)", [rows[0].id, nombre]);
   }
 }
-
+ 
 /** Arma la respuesta de un equipo con su lista de jugadores. */
 const armarEquipo = (equipo, jugadores) =>
   equipo && {
@@ -40,25 +40,25 @@ const armarEquipo = (equipo, jugadores) =>
     contacto: equipo.contacto,
     jugadores: jugadores.filter((j) => j.equipo_id === equipo.id).map((j) => j.nombre),
   };
-
+ 
 /** Trae equipos y jugadores de una tanda de turnos en dos consultas. */
 async function traerEquipos(turnoIds) {
   const { rows: equipos } = await pool.query("SELECT * FROM equipos WHERE turno_id = ANY($1)", [turnoIds]);
   if (equipos.length === 0) return { equipos: [], jugadores: [] };
-
+ 
   const { rows: jugadores } = await pool.query(
     "SELECT * FROM jugadores WHERE equipo_id = ANY($1) ORDER BY id",
     [equipos.map((e) => e.id)]
   );
   return { equipos, jugadores };
 }
-
+ 
 /* ══════════════════════════════════════════════════════════
    Crear turno
    ══════════════════════════════════════════════════════════ */
 rutasTurnos.post("/", async (req, res) => {
   const { canchaId, fecha, hora, equipoLocal, equipoVisitante } = req.body;
-
+ 
   // Todas las validaciones acá arriba: una vez abierta la transacción,
   // solo se escribe, nunca se hace return.
   if (!fechaValida(fecha)) {
@@ -70,12 +70,12 @@ rutasTurnos.post("/", async (req, res) => {
   if (!equipoLocal?.contacto?.trim()) {
     return res.status(400).json({ error: "Dejá un teléfono de contacto." });
   }
-
+ 
   const jugadoresLocal = limpiarJugadores(equipoLocal.jugadores);
   if (jugadoresLocal.length === 0) {
     return res.status(400).json({ error: "Cargá al menos un jugador." });
   }
-
+ 
   const { rows: canchas } = await pool.query(
     `SELECT c.id, c.tipo, x.apertura, x.cierre
        FROM canchas c JOIN complejos x ON x.id = c.complejo_id
@@ -85,39 +85,39 @@ rutasTurnos.post("/", async (req, res) => {
   if (canchas.length === 0) {
     return res.status(404).json({ error: "Esa cancha no existe." });
   }
-
+ 
   const { tipo: cupo, apertura, cierre } = canchas[0];
-
+ 
   if (!dentroDelHorario(hora, apertura, cierre)) {
     return res.status(400).json({ error: `El complejo abre de ${apertura}:00 a ${cierre}:00.` });
   }
-
+ 
   if (yaEmpezo(fecha, hora)) {
     return res.status(400).json({ error: "Ese horario ya pasó." });
   }
-
+ 
   if (!cupoValido(jugadoresLocal.length, cupo)) {
     return res.status(400).json({
       error: `En una cancha de ${cupo} se anotan hasta ${cupo} jugadores por equipo.`,
     });
   }
-
+ 
   const conVisitante = Boolean(equipoVisitante?.nombre?.trim());
   const jugadoresVisitante = conVisitante ? limpiarJugadores(equipoVisitante.jugadores) : [];
-
+ 
   if (conVisitante && !cupoValido(jugadoresVisitante.length, cupo)) {
     return res.status(400).json({
       error: `El equipo rival tiene que tener entre 1 y ${cupo} jugadores.`,
     });
   }
-
+ 
   const estado = conVisitante ? "confirmado" : "esperando";
-
+ 
   // El turno y sus equipos entran juntos o no entra nada.
   const cliente = await pool.connect();
   try {
     await cliente.query("BEGIN");
-
+ 
     const codigo = await generarCodigo();
     const { rows: creados } = await cliente.query(
       `INSERT INTO turnos (cancha_id, fecha, hora, estado, codigo)
@@ -125,13 +125,13 @@ rutasTurnos.post("/", async (req, res) => {
       [canchaId, fecha, hora, estado, codigo]
     );
     const turnoId = creados[0].id;
-
+ 
     await guardarEquipo(cliente, turnoId, "local", equipoLocal, jugadoresLocal);
-
+ 
     if (conVisitante) {
       await guardarEquipo(cliente, turnoId, "visitante", equipoVisitante, jugadoresVisitante);
     }
-
+ 
     await cliente.query("COMMIT");
     res.status(201).json({ id: turnoId, codigo, estado });
   } catch (e) {
@@ -147,13 +147,13 @@ rutasTurnos.post("/", async (req, res) => {
     cliente.release();
   }
 });
-
+ 
 /* ══════════════════════════════════════════════════════════
    Listado público. Sin códigos: son la llave de cada turno.
    ══════════════════════════════════════════════════════════ */
 rutasTurnos.get("/", async (req, res) => {
   const { desde, hasta } = req.query;
-
+ 
   const { rows: turnos } = await pool.query(
     `SELECT t.id, t.cancha_id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha,
             t.hora, t.estado
@@ -163,15 +163,15 @@ rutasTurnos.get("/", async (req, res) => {
       ORDER BY t.fecha, t.hora`,
     [desde || null, hasta || null]
   );
-
+ 
   if (turnos.length === 0) return res.json([]);
-
+ 
   const { equipos, jugadores } = await traerEquipos(turnos.map((t) => t.id));
-
+ 
   // El teléfono no va en el listado público: lo ve el que se anota de
   // contra (desde "Mi turno", con su código) y el dueño en su panel.
   const sinTelefono = (equipo) => equipo && { nombre: equipo.nombre, jugadores: equipo.jugadores };
-
+ 
   res.json(
     turnos.map((t) => ({
       ...t,
@@ -181,13 +181,13 @@ rutasTurnos.get("/", async (req, res) => {
     }))
   );
 });
-
+ 
 /* ══════════════════════════════════════════════════════════
    Listado del admin: con códigos y filtros
    ══════════════════════════════════════════════════════════ */
 rutasTurnos.get("/admin", exigirAdmin, async (req, res) => {
   const { estado, desde, hasta } = req.query;
-
+ 
   const { rows: turnos } = await pool.query(
     `SELECT t.id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora, t.estado,
             t.codigo, t.codigo_visitante, c.nombre AS cancha, c.tipo
@@ -198,11 +198,11 @@ rutasTurnos.get("/admin", exigirAdmin, async (req, res) => {
       ORDER BY t.fecha, t.hora`,
     [estado || null, desde || null, hasta || null]
   );
-
+ 
   if (turnos.length === 0) return res.json([]);
-
+ 
   const { equipos, jugadores } = await traerEquipos(turnos.map((t) => t.id));
-
+ 
   res.json(
     turnos.map((t) => ({
       ...t,
@@ -211,25 +211,25 @@ rutasTurnos.get("/admin", exigirAdmin, async (req, res) => {
     }))
   );
 });
-
+ 
 /* ══════════════════════════════════════════════════════════
    Anotarse de contra
    ══════════════════════════════════════════════════════════ */
 rutasTurnos.post("/:id/contra", async (req, res) => {
   const { equipo } = req.body;
-
+ 
   if (!equipo?.nombre?.trim()) {
     return res.status(400).json({ error: "Poné el nombre de tu equipo." });
   }
   if (!equipo?.contacto?.trim()) {
     return res.status(400).json({ error: "Dejá un teléfono de contacto." });
   }
-
+ 
   const jugadores = limpiarJugadores(equipo.jugadores);
   if (jugadores.length === 0) {
     return res.status(400).json({ error: "Cargá al menos un jugador." });
   }
-
+ 
   const { rows: turnos } = await pool.query(
     `SELECT t.id, t.estado, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora, c.tipo
        FROM turnos t JOIN canchas c ON c.id = t.cancha_id
@@ -237,9 +237,9 @@ rutasTurnos.post("/:id/contra", async (req, res) => {
     [req.params.id]
   );
   if (turnos.length === 0) return res.status(404).json({ error: "Ese turno no existe." });
-
+ 
   const turno = turnos[0];
-
+ 
   if (turno.estado !== "esperando") {
     return res.status(409).json({ error: "Ese turno ya tiene contra." });
   }
@@ -249,11 +249,11 @@ rutasTurnos.post("/:id/contra", async (req, res) => {
   if (yaEmpezo(turno.fecha, turno.hora)) {
     return res.status(400).json({ error: "Ese turno ya pasó." });
   }
-
+ 
   const cliente = await pool.connect();
   try {
     await cliente.query("BEGIN");
-
+ 
     // La condición del estado viaja dentro del UPDATE: si dos equipos se
     // anotan en el mismo instante, solo uno actualiza la fila.
     const codigoVisitante = await generarCodigo();
@@ -262,15 +262,15 @@ rutasTurnos.post("/:id/contra", async (req, res) => {
         WHERE id = $1 AND estado = 'esperando'`,
       [turno.id, codigoVisitante]
     );
-
+ 
     if (rowCount === 0) {
       await cliente.query("ROLLBACK");
       return res.status(409).json({ error: "Otro equipo se anotó primero." });
     }
-
+ 
     await guardarEquipo(cliente, turno.id, "visitante", equipo, jugadores);
     await cliente.query("COMMIT");
-
+ 
     res.json({ codigo: codigoVisitante });
   } catch (e) {
     await cliente.query("ROLLBACK");
@@ -280,7 +280,7 @@ rutasTurnos.post("/:id/contra", async (req, res) => {
     cliente.release();
   }
 });
-
+ 
 /* ══════════════════════════════════════════════════════════
    Mi turno: buscar con el código
    ══════════════════════════════════════════════════════════ */
@@ -293,21 +293,87 @@ rutasTurnos.get("/codigo/:codigo", async (req, res) => {
       WHERE t.codigo = $1 OR t.codigo_visitante = $1`,
     [req.params.codigo]
   );
-
+ 
   if (rows.length === 0) {
     return res.status(404).json({ error: "No encontramos ningún turno con ese código." });
   }
-
+ 
   const turno = rows[0];
   const { equipos, jugadores } = await traerEquipos([turno.id]);
-
+ 
   res.json({
     ...turno,
     local: armarEquipo(equipos.find((e) => e.rol === "local"), jugadores),
     visitante: armarEquipo(equipos.find((e) => e.rol === "visitante"), jugadores) || null,
   });
 });
-
+ 
+/* ══════════════════════════════════════════════════════════
+   Editar la lista de jugadores del equipo propio.
+   Se puede hasta que el turno arranca: los nombres cambian a
+   último momento y no hay razón para cerrarlo antes.
+   ══════════════════════════════════════════════════════════ */
+rutasTurnos.put("/codigo/:codigo/jugadores", async (req, res) => {
+  const jugadores = limpiarJugadores(req.body?.jugadores);
+ 
+  const { rows } = await pool.query(
+    `SELECT t.id, TO_CHAR(t.fecha, 'YYYY-MM-DD') AS fecha, t.hora, c.tipo,
+            (t.codigo = $1) AS es_local
+       FROM turnos t JOIN canchas c ON c.id = t.cancha_id
+      WHERE t.codigo = $1 OR t.codigo_visitante = $1`,
+    [req.params.codigo]
+  );
+ 
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "No encontramos ningún turno con ese código." });
+  }
+ 
+  const turno = rows[0];
+ 
+  if (yaEmpezo(turno.fecha, turno.hora)) {
+    return res.status(409).json({ error: "El turno ya empezó, no se puede modificar." });
+  }
+ 
+  if (!cupoValido(jugadores.length, turno.tipo)) {
+    return res.status(400).json({
+      error: `Tenés que anotar entre 1 y ${turno.tipo} jugadores.`,
+    });
+  }
+ 
+  // El código decide qué equipo se toca: con el del visitante no se
+  // edita el local, y al revés tampoco.
+  const rol = turno.es_local ? "local" : "visitante";
+ 
+  const cliente = await pool.connect();
+  try {
+    await cliente.query("BEGIN");
+ 
+    const { rows: equipos } = await cliente.query(
+      "SELECT id FROM equipos WHERE turno_id = $1 AND rol = $2",
+      [turno.id, rol]
+    );
+    if (equipos.length === 0) {
+      await cliente.query("ROLLBACK");
+      return res.status(404).json({ error: "Ese turno no tiene equipo cargado." });
+    }
+ 
+    const equipoId = equipos[0].id;
+    await cliente.query("DELETE FROM jugadores WHERE equipo_id = $1", [equipoId]);
+    for (const nombre of jugadores) {
+      await cliente.query("INSERT INTO jugadores (equipo_id, nombre) VALUES ($1, $2)", [equipoId, nombre]);
+    }
+ 
+    await cliente.query("COMMIT");
+    res.json({ jugadores });
+  } catch (e) {
+    await cliente.query("ROLLBACK");
+    console.error(e);
+    res.status(500).json({ error: "No se pudieron guardar los jugadores." });
+  } finally {
+    cliente.release();
+  }
+});
+ 
 /* ══════════════════════════════════════════════════════════
    Cancelar el turno propio, hasta 15 minutos antes
    ══════════════════════════════════════════════════════════ */
@@ -319,25 +385,25 @@ rutasTurnos.delete("/codigo/:codigo", async (req, res) => {
       WHERE t.codigo = $1 OR t.codigo_visitante = $1`,
     [req.params.codigo]
   );
-
+ 
   if (rows.length === 0) {
     return res.status(404).json({ error: "No encontramos ningún turno con ese código." });
   }
-
+ 
   const turno = rows[0];
-
+ 
   if (!puedeCancelar(turno.fecha, turno.hora)) {
     return res.status(409).json({
       error: `Los turnos se pueden cancelar hasta ${MINUTOS_MINIMOS} minutos antes de la hora de juego.`,
     });
   }
-
+ 
   if (turno.es_local) {
     // Se va el que reservó: cae el turno entero y la cancha queda libre.
     await pool.query("DELETE FROM turnos WHERE id = $1", [turno.id]);
     return res.json({ cancelado: "turno" });
   }
-
+ 
   // Se baja la contra: el turno sigue en pie y vuelve a buscar rival.
   const cliente = await pool.connect();
   try {
@@ -357,7 +423,7 @@ rutasTurnos.delete("/codigo/:codigo", async (req, res) => {
     cliente.release();
   }
 });
-
+ 
 /* ══════════════════════════════════════════════════════════
    El admin borra cualquier turno, sin límite de horario
    ══════════════════════════════════════════════════════════ */

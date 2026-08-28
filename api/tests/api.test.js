@@ -387,3 +387,98 @@ describe("canchas del admin", () => {
     expect(estado).toBe(200);
   });
 });
+
+describe("editar los jugadores del equipo propio", () => {
+  it("agrega jugadores a un equipo que se había guardado incompleto", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF7 });
+
+    const { estado, datos } = await pedir(`/api/turnos/codigo/${turno.codigo}/jugadores`, {
+      metodo: "PUT",
+      cuerpo: { jugadores: ["Gabi", "Nico", "Fran", "Santi", "Lucho"] },
+    });
+
+    expect(estado).toBe(200);
+    expect(datos.jugadores).toHaveLength(5);
+
+    const { datos: consulta } = await pedir("/api/turnos/codigo/" + turno.codigo);
+    expect(consulta.local.jugadores).toEqual(["Gabi", "Nico", "Fran", "Santi", "Lucho"]);
+  });
+
+  it("también sirve para sacar jugadores", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF7 });
+    await pedir(`/api/turnos/codigo/${turno.codigo}/jugadores`, {
+      metodo: "PUT",
+      cuerpo: { jugadores: ["Gabi"] },
+    });
+
+    const { datos } = await pedir("/api/turnos/codigo/" + turno.codigo);
+    expect(datos.local.jugadores).toEqual(["Gabi"]);
+  });
+
+  it("respeta el cupo de la cancha", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF5 });
+
+    const { estado, datos } = await pedir(`/api/turnos/codigo/${turno.codigo}/jugadores`, {
+      metodo: "PUT",
+      cuerpo: { jugadores: ["a", "b", "c", "d", "e", "f"] },
+    });
+
+    expect(estado).toBe(400);
+    expect(datos.error).toMatch(/entre 1 y 5/);
+  });
+
+  it("no deja dejar el equipo sin nadie", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF7 });
+    const { estado } = await pedir(`/api/turnos/codigo/${turno.codigo}/jugadores`, {
+      metodo: "PUT",
+      cuerpo: { jugadores: [] },
+    });
+    expect(estado).toBe(400);
+  });
+
+  it("con el código del visitante se edita el visitante, no el local", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF7 });
+    const { datos: contra } = await pedir(`/api/turnos/${turno.id}/contra`, {
+      metodo: "POST",
+      cuerpo: { equipo: equipo("Los Otros") },
+    });
+
+    await pedir(`/api/turnos/codigo/${contra.codigo}/jugadores`, {
+      metodo: "PUT",
+      cuerpo: { jugadores: ["Visitante uno", "Visitante dos"] },
+    });
+
+    const { datos } = await pedir("/api/turnos/codigo/" + turno.codigo);
+    expect(datos.visitante.jugadores).toEqual(["Visitante uno", "Visitante dos"]);
+    // El local quedó intacto: cada código toca solo su equipo.
+    expect(datos.local.jugadores).toEqual(["Los Pibes 1", "Los Pibes 2", "Los Pibes 3"]);
+  });
+
+  it("no se puede editar un turno que ya empezó", async () => {
+    const haceUnRato = new Date();
+    haceUnRato.setHours(haceUnRato.getHours() - 1);
+
+    await turnoDirecto({
+      canchaId: canchaF7,
+      fecha: fechaLocal(0),
+      hora: haceUnRato.getHours(),
+      codigo: "6666",
+    });
+
+    const { estado, datos } = await pedir("/api/turnos/codigo/6666/jugadores", {
+      metodo: "PUT",
+      cuerpo: { jugadores: ["Tarde"] },
+    });
+
+    expect(estado).toBe(409);
+    expect(datos.error).toMatch(/ya empezó/i);
+  });
+
+  it("con un código inexistente da 404", async () => {
+    const { estado } = await pedir("/api/turnos/codigo/0000/jugadores", {
+      metodo: "PUT",
+      cuerpo: { jugadores: ["Nadie"] },
+    });
+    expect(estado).toBe(404);
+  });
+});
