@@ -10,6 +10,8 @@
     "scripts": {
     "dev": "node --watch --env-file=.env src/index.js",
     "migrar": "node --env-file=.env src/migrar.js",
+    "migrar:test": "node --env-file=.env.test src/migrar.js",
     "test": "vitest run"
   }
+  
 }
