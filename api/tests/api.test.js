@@ -482,3 +482,97 @@ describe("editar los jugadores del equipo propio", () => {
     expect(estado).toBe(404);
   });
 });
+
+describe("notificaciones del dueño", () => {
+  const verNotificaciones = async () => {
+    const token = await entrarComoAdmin();
+    return pedir("/api/notificaciones", { token });
+  };
+
+  it("solo las ve el dueño", async () => {
+    const { estado } = await pedir("/api/notificaciones");
+    expect(estado).toBe(401);
+  });
+
+  it("avisa cuando alguien reserva buscando contra", async () => {
+    await reservar({ canchaId: canchaF7, equipoLocal: equipo("Los Pibes") });
+
+    const { datos } = await verNotificaciones();
+    expect(datos.nuevas).toBe(1);
+    expect(datos.lista[0].tipo).toBe("reserva");
+    expect(datos.lista[0].texto).toMatch(/Los Pibes \(busca contra\) reservó Cancha 1/);
+  });
+
+  it("distingue el turno que ya viene armado", async () => {
+    await reservar({
+      canchaId: canchaF7,
+      equipoLocal: equipo("Los Pibes"),
+      equipoVisitante: equipo("Los Otros", 3, ""),
+    });
+
+    const { datos } = await verNotificaciones();
+    expect(datos.lista[0].texto).toMatch(/Los Pibes vs Los Otros/);
+  });
+
+  it("avisa cuando una contra se anota", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF7 });
+    await pedir(`/api/turnos/${turno.id}/contra`, {
+      metodo: "POST",
+      cuerpo: { equipo: equipo("Los Otros", 3, "3564 22-2222") },
+    });
+
+    const { datos } = await verNotificaciones();
+    expect(datos.nuevas).toBe(2);
+    expect(datos.lista[0].tipo).toBe("contra");
+    expect(datos.lista[0].texto).toMatch(/Los Otros se anotó de contra/);
+  });
+
+  it("avisa cuando el local cancela, y el aviso sobrevive al borrado del turno", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF7 });
+    await pedir("/api/turnos/codigo/" + turno.codigo, { metodo: "DELETE" });
+
+    const { datos } = await verNotificaciones();
+    const cancelacion = datos.lista.find((n) => n.tipo === "cancelacion");
+    expect(cancelacion.texto).toMatch(/canceló el turno/);
+    // El turno ya no existe, pero el aviso quedó.
+    expect(cancelacion.turno_id).toBeNull();
+  });
+
+  it("avisa cuando la contra se baja", async () => {
+    const { datos: turno } = await reservar({ canchaId: canchaF7 });
+    const { datos: contra } = await pedir(`/api/turnos/${turno.id}/contra`, {
+      metodo: "POST",
+      cuerpo: { equipo: equipo("Los Otros") },
+    });
+    await pedir("/api/turnos/codigo/" + contra.codigo, { metodo: "DELETE" });
+
+    const { datos } = await verNotificaciones();
+    expect(datos.lista[0].tipo).toBe("baja_contra");
+    expect(datos.lista[0].texto).toMatch(/se bajó del partido/);
+  });
+
+  it("marcar como leídas pone el contador en cero", async () => {
+    await reservar({ canchaId: canchaF7 });
+    const token = await entrarComoAdmin();
+
+    const antes = await pedir("/api/notificaciones/nuevas", { token });
+    expect(antes.datos.nuevas).toBe(1);
+
+    await pedir("/api/notificaciones/leidas", { metodo: "POST", token });
+
+    const despues = await pedir("/api/notificaciones/nuevas", { token });
+    expect(despues.datos.nuevas).toBe(0);
+    // Leídas, pero siguen en la lista: es un historial, no una bandeja.
+    const { datos } = await pedir("/api/notificaciones", { token });
+    expect(datos.lista).toHaveLength(1);
+  });
+
+  it("si la reserva falla, no queda el aviso colgado", async () => {
+    await reservar({ canchaId: canchaF7 });
+    const rechazada = await reservar({ canchaId: canchaF7, equipoLocal: equipo("Otros") });
+    expect(rechazada.estado).toBe(409);
+
+    const { datos } = await verNotificaciones();
+    expect(datos.lista).toHaveLength(1);
+  });
+});

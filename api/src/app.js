@@ -1,22 +1,23 @@
 import express from "express";
 import { pool } from "./db.js";
 import { rutasTurnos } from "./rutas/turnos.js";
+import { rutasNotificaciones } from "./rutas/notificaciones.js";
 import { emitirToken, exigirAdmin } from "./auth.js";
- 
+
 export const app = express();
 app.use(express.json());
- 
+
 app.get("/api/ping", (req, res) => {
   res.json({ mensaje: "La API está viva" });
 });
- 
+
 app.post("/api/login", (req, res) => {
   if (req.body?.clave !== process.env.CLAVE_ADMIN) {
     return res.status(401).json({ error: "Clave incorrecta." });
   }
   res.json({ token: emitirToken() });
 });
- 
+
 app.get("/api/complejo", async (req, res) => {
   const { rows: complejos } = await pool.query("SELECT * FROM complejos LIMIT 1");
   const { rows: canchas } = await pool.query(
@@ -25,7 +26,7 @@ app.get("/api/complejo", async (req, res) => {
   );
   res.json({ ...complejos[0], canchas });
 });
- 
+
 app.put("/api/complejo", exigirAdmin, async (req, res) => {
   const { nombre, apertura, cierre } = req.body;
   if (!nombre || !nombre.trim()) {
@@ -40,7 +41,7 @@ app.put("/api/complejo", exigirAdmin, async (req, res) => {
   );
   res.json(rows[0]);
 });
- 
+
 app.post("/api/canchas", exigirAdmin, async (req, res) => {
   const { complejoId, nombre, tipo } = req.body;
   if (![5, 7].includes(Number(tipo))) {
@@ -55,7 +56,7 @@ app.post("/api/canchas", exigirAdmin, async (req, res) => {
   );
   res.status(201).json(rows[0]);
 });
- 
+
 app.delete("/api/canchas/:id", exigirAdmin, async (req, res) => {
   try {
     const { rowCount } = await pool.query("DELETE FROM canchas WHERE id = $1", [req.params.id]);
@@ -81,9 +82,10 @@ app.delete("/api/canchas/:id", exigirAdmin, async (req, res) => {
     throw e;
   }
 });
- 
+
 app.use("/api/turnos", rutasTurnos);
- 
+app.use("/api/notificaciones", rutasNotificaciones);
+
 app.use((err, req, res, next) => {
   if (err.type === "entity.parse.failed") {
     return res.status(400).json({ error: "El cuerpo del pedido no es JSON válido." });

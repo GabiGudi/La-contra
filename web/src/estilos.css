@@ -521,13 +521,24 @@ ul li.anotado {
   .lateral { display: none; }
 
   .barra-top {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     background: var(--panel);
     border-bottom: 1px solid var(--borde);
     padding: 13px 16px;
     position: sticky;
     top: 0;
     z-index: 10;
+  }
+
+  .barra-top .campana {
+    color: var(--suave);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
   }
 
   .barra-top .marca { margin: 0; padding: 0; font-size: 16px; }
@@ -563,8 +574,7 @@ ul li.anotado {
 
   h2 { font-size: 21px; }
   input, select { max-width: 100%; }
-  button { width: 100%; margin: 10px 0 0; }
-  button + button { margin-left: 0; }
+  button { width: 100%; margin-bottom: 8px; }
 
   td button, ol li button, ul li button,
   .filtros button, .horarios button {
@@ -579,18 +589,25 @@ ul li.anotado {
   * { transition: none !important; }
 }
 
-/* ── Espacio entre los campos y su botón ──────────────── */
+/* ── Novedades ─────────────────────────────────────────── */
 
-/* En escritorio el botón queda al lado del campo, no pegado */
-fieldset > button,
-.tarjeta > button,
-main > button {
-  margin-top: 12px;
-  margin-right: 8px;
+.globo {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--ambar);
+  color: #1B1206;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
 }
 
-/* Los botones que van juntos no se tocan entre sí */
-button + button { margin-left: 8px; }
+.lateral nav a.router-link-active .globo { background: var(--sobre-verde); color: var(--verde); }
 
-/* El buscador de "Mi turno": campo y botón en línea, con aire */
-main > input + button { margin-left: 8px; }
+/* Cada novedad como una tarjeta con su etiqueta y el momento */
+ul li.nueva { border-left-color: var(--ambar); background: var(--panel-alto); }
+li .texto { margin: 7px 0 4px; font-size: 14.5px; font-weight: 500; }

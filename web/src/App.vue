@@ -1,17 +1,45 @@
 <script setup>
-import { computed } from "vue";
-import { useRouter } from "vue-router";
-import { esAdmin, guardarToken } from "./auth.js";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { esAdmin, guardarToken, pedirComoAdmin } from "./auth.js";
 
 const router = useRouter();
+const ruta = useRoute();
+const nuevas = ref(0);
+let reloj = null;
 
-/** En el celular, el tercer botón lleva al panel o al login según corresponda. */
 const destinoAdmin = computed(() => (esAdmin() ? "/admin/turnos" : "/login"));
+
+/** El contador de la campanita. Se consulta cada 30 segundos. */
+async function contarNuevas() {
+  if (!esAdmin()) {
+    nuevas.value = 0;
+    return;
+  }
+  try {
+    const r = await pedirComoAdmin("/api/notificaciones/nuevas");
+    if (!r.ok) return;
+    nuevas.value = (await r.json()).nuevas;
+  } catch {
+    /* sin conexión: dejamos el número anterior */
+  }
+}
 
 function salir() {
   guardarToken("");
+  nuevas.value = 0;
   router.push("/");
 }
+
+onMounted(() => {
+  contarNuevas();
+  reloj = setInterval(contarNuevas, 30000);
+});
+
+onUnmounted(() => clearInterval(reloj));
+
+// Al navegar (por ejemplo, al entrar o salir del panel) se recuenta.
+watch(() => ruta.path, contarNuevas);
 </script>
 
 <template>
@@ -26,6 +54,10 @@ function salir() {
 
         <template v-if="esAdmin()">
           <span class="separador"></span>
+          <RouterLink to="/admin/novedades">
+            Novedades
+            <span v-if="nuevas" class="globo">{{ nuevas }}</span>
+          </RouterLink>
           <RouterLink to="/admin/turnos">Turnos</RouterLink>
           <RouterLink to="/admin">Canchas</RouterLink>
           <button class="salir" @click="salir">Cerrar sesión</button>
@@ -33,15 +65,19 @@ function salir() {
 
         <template v-else>
           <span class="separador"></span>
-          <RouterLink to="/login">Admin</RouterLink>
+          <RouterLink to="/login">Soy el dueño</RouterLink>
         </template>
       </nav>
     </aside>
 
     <div class="principal">
-      <!-- Celular: barra de arriba -->
+      <!-- Celular: barra de arriba, con la campanita -->
       <header class="barra-top">
         <p class="marca">LA<b>CONTRA</b></p>
+        <RouterLink v-if="esAdmin()" to="/admin/novedades" class="campana">
+          Novedades
+          <span v-if="nuevas" class="globo">{{ nuevas }}</span>
+        </RouterLink>
       </header>
 
       <main>

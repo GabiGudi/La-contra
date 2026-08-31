@@ -5,6 +5,7 @@ import AdminConfig from "./vistas/AdminConfig.vue";
 import AdminTurnos from "./vistas/AdminTurnos.vue";
 import Login from "./vistas/Login.vue";
 import { esAdmin } from "./auth.js";
+import Novedades from "./vistas/Novedades.vue";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -14,6 +15,7 @@ export const router = createRouter({
     { path: "/login", component: Login },
     { path: "/admin", component: AdminConfig, meta: { admin: true } },
     { path: "/admin/turnos", component: AdminTurnos, meta: { admin: true } },
+    { path: "/admin/novedades", component: Novedades, meta: { admin: true } },
   ],
 });
 
